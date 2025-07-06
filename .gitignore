@@ -34,3 +34,7 @@ node_modules
 # Hardhat Ignition default folder for deployments against a local node
 ignition/deployments/chain-31337
 .env
+
+#documentation files
+/how-to-do.txt
+/logs_deploy.txt

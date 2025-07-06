@@ -7,5 +7,14 @@
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
+    "baseUrl": ".",
+    "jsx": "preserve",
+    "moduleResolution": "node",
+    "paths": {
+      "@/hooks/*": ["hooks/*"],
+      "@/lib/*":    ["lib/*"],
+      "@/components/*": ["components/*"],
+      "@/abis/*":   ["abis/*"],
+    }
   }
 }

@@ -9,19 +9,36 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@chakra-ui/react": "^3.21.0",
+    "@emotion/react": "^11.14.0",
+    "@hookform/resolvers": "^5.1.1",
+    "@rainbow-me/rainbowkit": "^2.2.8",
+    "@tanstack/react-query": "^5.81.2",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@wagmi/connectors": "^5.8.5",
+    "ethers": "^6.14.4",
+    "jest": "^30.0.2",
+    "next": "14.1.0",
+    "prettier": "^3.6.0",
     "react": "^18",
     "react-dom": "^18",
-    "next": "14.1.0"
+    "react-hook-form": "^7.58.1",
+    "recharts": "^3.0.0",
+    "viem": "^2.31.4",
+    "wagmi": "^2.15.6",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
-    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "14.1.0",
+    "pino-pretty": "^13.0.0",
     "postcss": "^8",
     "tailwindcss": "^3.3.0",
-    "eslint": "^8",
-    "eslint-config-next": "14.1.0"
+    "typescript": "^5"
   }
 }
