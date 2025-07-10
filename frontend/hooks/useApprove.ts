@@ -1,51 +1,57 @@
 // frontend/hooks/useApprove.ts
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
-import ERC20Abi from '@/abis/ERC20.json';
-import { useQueryClient } from '@tanstack/react-query';
-import { useAccount } from 'wagmi';
+import {
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useReadContract,
+} from "wagmi";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAccount } from "wagmi";
+import ERC20Abi from "@/abis/ERC20.json";
 
 export function useApprove(
   tokenAddress: `0x${string}`,
   spender: `0x${string}`,
-  amount: bigint,
+  amount: bigint
 ) {
   const { address } = useAccount();
   const queryClient = useQueryClient();
 
-  // 1) Lee allowance actual
+  /* 1⃣  allowance on-chain */
   const { data: allowance = BigInt(0), refetch: refetchAllowance } = useReadContract({
     address: tokenAddress,
     abi: ERC20Abi,
-    functionName: 'allowance',
+    functionName: "allowance",
     args: [address!, spender],
-    // vuelve a leer en background
   });
 
-  // 2) Prepara la tx approve
-  const { writeContract: doApprove, data: approveHash, error: approveError } = useWriteContract();
+  /* 2⃣  enviamos approve */
+  const {
+    writeContract: doApprove,
+    data: txHash,
+    error: approveError,
+  } = useWriteContract();
 
-  // 3) Espera confirmación para refrescar
-  const { isLoading: isApprovingTx, isSuccess: approveSuccess } = useWaitForTransactionReceipt({
-    hash: approveHash,
-  });
+  /* 3⃣  esperamos recibo */
+  const { isLoading: isApprovingTx, isSuccess: approveSuccess } =
+    useWaitForTransactionReceipt({ hash: txHash });
 
-  // Cuando mine, invalidamos y refetch allowance
-  if (approveSuccess) {
-    console.log('[useApprove] approval confirmed, refetching allowance');
-    refetchAllowance();
-    queryClient.invalidateQueries({ queryKey: ['userPosition'] });
-    queryClient.invalidateQueries({ queryKey: ['poolData'] });
-  }
+  /* 4⃣  side-effects ⇒ una sola vez */
+  useEffect(() => {
+    if (!approveSuccess) return; // sólo cuando pasa a true
+    refetchAllowance(); // refresca el allowance leído
+    queryClient.invalidateQueries({ queryKey: ["userPosition"] });
+    queryClient.invalidateQueries({ queryKey: ["poolData"] });
+  }, [approveSuccess, refetchAllowance, queryClient]);
 
-  const approve = () => {
-    console.log(`[useApprove] calling approve(${spender}, ${amount.toString()})`);
+  /* helper para la UI */
+  const approve = () =>
     doApprove({
       address: tokenAddress,
       abi: ERC20Abi,
-      functionName: 'approve',
+      functionName: "approve",
       args: [spender, amount],
     });
-  };
 
   return {
     allowance,

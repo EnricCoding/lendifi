@@ -6,6 +6,8 @@ import { useParams } from 'next/navigation';
 import { MARKETS } from '@/config/markets';
 import { MarketCard } from '@/components/MarketCard';
 import { DepositForm } from '@/components/DepositForm';
+import { UserPositionCard } from '@/components/UserPositionCard';
+import { useUserPosition } from '@/hooks';
 
 export default function MarketDetailPage() {
     // 1) Leer el parámetro dinámico desde useParams (app router)
@@ -22,9 +24,23 @@ export default function MarketDetailPage() {
         );
     }
 
-    // 3) Variables de entorno
     const POOL = process.env.NEXT_PUBLIC_LENDING_POOL_ADDRESS!;
     const ORACLE = process.env.NEXT_PUBLIC_ORACLE_ADDRESS!;
+
+    const {
+        deposited,        // bigint  (cantidad en wei)
+        borrowed,         // bigint  (cantidad en wei)
+        healthFactor,     // number
+        loading: posLoading,
+    } = useUserPosition(
+        POOL,                 // poolAddress
+        cfg.tokenAddress,     // tokenAddress
+        ORACLE                // oracleAddress
+    );
+
+
+    // 3) Variables de entorno
+
 
     return (
         <div className="min-h-screen bg-bg-light dark:bg-bg-dark px-4 py-6 space-y-8">
@@ -47,6 +63,40 @@ export default function MarketDetailPage() {
                 showButton={false} // No mostrar botón aquí, ya que es una vista de detalle
             />
 
+            {/* 🆕 5) Tu posición */}
+
+            {posLoading ? (
+                <div className="flex justify-center py-4">
+                    <svg
+                        className="animate-spin h-6 w-6 text-primary"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                        />
+                        <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
+                    </svg>
+                </div>
+            ) : (
+                <UserPositionCard
+                    depositedWei={deposited}
+                    borrowedWei={borrowed}
+                    hf={healthFactor}
+                    symbol={cfg.symbol}
+                />
+            )}
+
             {/* Actions */}
             <div className="space-y-6">
                 <h2 className="text-2xl font-semibold text-primary dark:text-primary-dark">
@@ -64,7 +114,7 @@ export default function MarketDetailPage() {
                         <p className="text-text-secondary dark:text-text-secondary-dark text-sm mb-4">
                             Ingresa la cantidad de {cfg.symbol} que deseas depositar como colateral. Obtendrás aTokens equivalentes.
                         </p>
-                        <DepositForm tokenAddress={cfg.tokenAddress} poolAddress={POOL}  symbol={cfg.symbol}/>
+                        <DepositForm tokenAddress={cfg.tokenAddress} poolAddress={POOL} symbol={cfg.symbol} />
                     </div>
 
                     {/* Borrow */}
