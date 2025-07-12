@@ -6,6 +6,8 @@ import { sepolia } from 'wagmi/chains';
 import { injected } from 'wagmi/connectors';
 import { createPublicClient, http } from 'viem';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
+
 
 // 1. Instancia React Query
 const queryClient = new QueryClient();
@@ -37,6 +39,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <WagmiProvider config={wagmiConfig}>
                 <QueryClientProvider client={queryClient}>
                     {children}
+                    <Toaster position="top-right" richColors /> {/* auto dark/light */}
                 </QueryClientProvider>
             </WagmiProvider>
         </ChakraProvider>

@@ -8,6 +8,9 @@ import { MarketCard } from '@/components/MarketCard';
 import { DepositForm } from '@/components/DepositForm';
 import { UserPositionCard } from '@/components/UserPositionCard';
 import { useUserPosition } from '@/hooks';
+import { BorrowForm } from '@/components/BorrowForm';
+import { WithdrawForm } from '@/components/WithdrawForm';
+import { RepayForm } from '@/components/RepayForm';
 
 export default function MarketDetailPage() {
     // 1) Leer el parámetro dinámico desde useParams (app router)
@@ -65,37 +68,14 @@ export default function MarketDetailPage() {
 
             {/* 🆕 5) Tu posición */}
 
-            {posLoading ? (
-                <div className="flex justify-center py-4">
-                    <svg
-                        className="animate-spin h-6 w-6 text-primary"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                        />
-                        <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
-                    </svg>
-                </div>
-            ) : (
-                <UserPositionCard
-                    depositedWei={deposited}
-                    borrowedWei={borrowed}
-                    hf={healthFactor}
-                    symbol={cfg.symbol}
-                />
-            )}
+
+            <UserPositionCard
+                depositedWei={deposited}
+                borrowedWei={borrowed}
+                hf={healthFactor}
+                symbol={cfg.symbol}
+                loading={posLoading}
+            />
 
             {/* Actions */}
             <div className="space-y-6">
@@ -112,7 +92,7 @@ export default function MarketDetailPage() {
                             Depositar {cfg.symbol}
                         </h3>
                         <p className="text-text-secondary dark:text-text-secondary-dark text-sm mb-4">
-                            Ingresa la cantidad de {cfg.symbol} que deseas depositar como colateral. Obtendrás aTokens equivalentes.
+                            Usa tus {cfg.symbol} como garantía: deposítalos aquí para empezar a generar intereses y desbloquear tu capacidad de préstamo.
                         </p>
                         <DepositForm tokenAddress={cfg.tokenAddress} poolAddress={POOL} symbol={cfg.symbol} />
                     </div>
@@ -124,8 +104,13 @@ export default function MarketDetailPage() {
                         </h3>
                         <p className="text-text-secondary dark:text-text-secondary-dark text-sm mb-4">
                             Solicita un préstamo de {cfg.symbol} contra tu colateral. Vigila tu Health Factor para evitar liquidaciones.
+                            Aquí puedes pedir prestado hasta el máximo disponible en función de tu colateral y LTV (80%).
                         </p>
-                        {/* Aquí irá <BorrowForm /> una vez implementado */}
+                        <BorrowForm
+                            symbol={cfg.symbol}
+                            tokenAddress={cfg.tokenAddress}
+                            poolAddress={POOL}
+                        />
                     </div>
 
                     {/* Withdraw */}
@@ -136,6 +121,12 @@ export default function MarketDetailPage() {
                         <p className="text-text-secondary dark:text-text-secondary-dark text-sm mb-4">
                             Retira tu colateral quemando aTokens. Asegúrate de mantener tu Health Factor por encima de 1.
                         </p>
+
+                        <WithdrawForm
+                            symbol={cfg.symbol}
+                            tokenAddress={cfg.tokenAddress}
+                            poolAddress={POOL}
+                        />
                         {/* Aquí irá <WithdrawForm /> una vez implementado */}
                     </div>
 
@@ -147,7 +138,11 @@ export default function MarketDetailPage() {
                         <p className="text-text-secondary dark:text-text-secondary-dark text-sm mb-4">
                             Paga tu deuda en {cfg.symbol}. Esto incrementa tu Health Factor y reduce el riesgo.
                         </p>
-                        {/* Aquí irá <RepayForm /> una vez implementado */}
+                        <RepayForm
+                            symbol={cfg.symbol as any}          // MarketKey
+                            tokenAddress={cfg.tokenAddress}
+                            poolAddress={POOL}
+                        />
                     </div>
                 </div>
             </div>

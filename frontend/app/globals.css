@@ -26,8 +26,97 @@ body {
     rgb(var(--background-start-rgb));
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+[data-sonner-toast] {
+  /* rounded-lg */
+  border-radius: 0.5rem;
+
+  /* shadow-lg */
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+  /* contorno (ring-1 ring-secondary-light/30) */
+  border: 1px solid rgba(0, 0, 0, 0.05);
+
+  /* padding px-4 py-3 */
+  padding: 0.75rem 1rem;
+
+  /* fondo & texto tema claro */
+  background-color: #ffffff; /* bg-surface-light */
+  color: #0f172a; /* text-text-primary */
+}
+
+/* Tema oscuro */
+@media (prefers-color-scheme: dark) {
+  [data-sonner-toast] {
+    background-color: #1e293b; /* bg-surface-dark */
+    border-color: rgba(148, 163, 184, 0.2); /* ring-secondary/40 */
+    color: #f1f5f9; /* text-text-primary-dark */
   }
+}
+
+/* Título */
+[data-sonner-toast] .sonner-title {
+  font-weight: 600; /* font-semibold */
+}
+
+/* Descripción opcional */
+[data-sonner-toast] .sonner-description {
+  font-size: 0.875rem; /* text-sm */
+  color: #64748b; /* text-text-secondary */
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-sonner-toast] .sonner-description {
+    color: #94a3b8; /* text-text-secondary-dark */
+  }
+}
+
+/* Botón de cerrar (×) */
+[data-sonner-close-button] {
+  color: #3b82f6; /* text-secondary */
+  transition: color 150ms ease;
+}
+
+[data-sonner-close-button]:hover {
+  color: #60a5fa; /* hover:text-secondary-light */
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-sonner-close-button] {
+    color: #60a5fa; /* text-secondary-dark */
+  }
+
+  [data-sonner-close-button]:hover {
+    color: #3b82f6; /* hover revertido */
+  }
+}
+
+/* Animaciones de entrada/salida */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+[data-sonner-toast][data-sonner-toast-state="open"] {
+  animation: slide-in-right 200ms ease-out forwards;
+}
+[data-sonner-toast][data-sonner-toast-state="closed"] {
+  animation: slide-out-right 200ms ease-in forwards;
 }

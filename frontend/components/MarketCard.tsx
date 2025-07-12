@@ -4,68 +4,67 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePoolData } from '@/hooks';
+import { useDepositApy } from '@/hooks/useDepositApy';
 import { Tooltip } from './ui/Tooltip';
 
-/* ───────── helpers ───────── */
-function fmt(
-    n: number,
-    digits = 2,
-    locale = 'es-ES'
-) {
-    return new Intl.NumberFormat(locale, {
-        minimumFractionDigits: digits,
-        maximumFractionDigits: digits,
-    }).format(n);
-}
-
-interface MarketCardProps {
-    symbol: string;
-    tokenAddress: string;
-    poolAddress: string;
-    oracleAddress: string;
-    showButton?: boolean;
-}
-
+/**
+ * MarketCard: información esencial para usuarios no técnicos.
+ * - Precio actual del token (USD)
+ * - Porcentaje del pool prestado (utilización)
+ * - TVL
+ * - APY real (basada en la utilización actual)
+ * - CTA opcional
+ */
 export function MarketCard({
     symbol,
     tokenAddress,
     poolAddress,
     oracleAddress,
     showButton = true,
-}: MarketCardProps) {
+}: {
+    symbol: string;
+    tokenAddress: string;
+    poolAddress: string;
+    oracleAddress: string;
+    showButton?: boolean;
+}) {
     const pool = usePoolData(poolAddress, tokenAddress, oracleAddress);
     const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const { data, isLoading, error } = pool;
+    const price = data?.price ?? 0;
+    const totalCollateral = data?.totalCollateral ?? BigInt(0);
+    const totalDebt = data?.totalDebt ?? BigInt(0);
 
-    const loading = pool.isLoading;
-    const error = pool.error;
+    /* APY real */
+    const rateModelAddress = process.env.NEXT_PUBLIC_RATE_MODEL_ADDRESS!;
+    const { data: apy, isLoading: apyLoading } = useDepositApy(
+        rateModelAddress,
+        totalCollateral,
+        totalDebt
+    );
 
-    const price = pool.data?.price ?? 0;
-    const totalCollateral = pool.data?.totalCollateral ?? BigInt(0);
-    const totalDebt = pool.data?.totalDebt ?? BigInt(0);
-
-    const tvl = Number(totalCollateral) / 1e18;                    // en tokens
-
+    /* Métricas pool */
+    const tvl = Number(totalCollateral) / 1e18;
     const utilization =
         totalCollateral > BigInt(0)
             ? (Number(totalDebt) / Number(totalCollateral)) * 100
             : 0;
 
+    const fmt = (n: number, digits = 2) =>
+        new Intl.NumberFormat('es-ES', {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
+        }).format(n);
+
     return (
-        <div className="
-      p-4 rounded-xl shadow hover:shadow-lg transition
-      border border-secondary-light dark:border-secondary
-      bg-surface-light dark:bg-surface-dark"
-        >
-            <h3 className="text-lg font-bold text-primary dark:text-primary-dark mb-3">
-                {symbol}
-            </h3>
+        <div className="p-4 rounded-xl shadow hover:shadow-lg transition border border-secondary-light dark:border-secondary bg-surface-light dark:bg-surface-dark">
+            {/* Encabezado */}
+            <h3 className="text-lg font-bold text-primary dark:text-primary-dark mb-3">{symbol}</h3>
 
             {/* Loader */}
-            {(!mounted || loading) && (
+            {(!mounted || isLoading) && (
                 <div className="flex justify-center py-5">
                     <svg className="animate-spin h-6 w-6 text-secondary dark:text-secondary-dark" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -75,56 +74,51 @@ export function MarketCard({
             )}
 
             {/* Error */}
-            {mounted && !loading && error && (
-                <p className="text-danger text-sm">No se pudo obtener los datos del mercado.</p>
+            {mounted && !isLoading && error && (
+                <p className="text-danger text-sm">Error al cargar datos. Recarga la página.</p>
             )}
 
             {/* Datos */}
-            {mounted && !loading && !error && (
-                <div className="space-y-3">
+            {mounted && !isLoading && !error && (
+                <div className="space-y-4">
                     {/* Precio */}
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-sm text-text-secondary dark:text-text-secondary-dark">
-                            Precio
-                        </span>
-                        <span className="font-medium text-primary">
-                            ${fmt(price, 4)} USD
-                        </span>
+                    <div>
+                        <span className="block text-sm text-text-secondary dark:text-text-secondary-dark">Precio de mercado</span>
+                        <span className="font-medium text-primary">${fmt(price, 4)} USD</span>
                     </div>
 
                     {/* Utilización */}
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-sm text-text-secondary dark:text-text-secondary-dark flex items-center gap-1">
-                            Utilización
-                            <Tooltip content="Porcentaje de deuda respecto al colateral total">
-                                <span className="cursor-help text-secondary dark:text-secondary-dark">ℹ️</span>
-                            </Tooltip>
+                    <div>
+                        <span className="block text-sm text-text-secondary dark:text-text-secondary-dark items-center gap-1">
+                            Pool prestado (Porcentaje del total depositado que está actualmente prestado)
                         </span>
-                        <span className="font-medium text-primary">
-                            {fmt(utilization, 1)}%
-                        </span>
+                        <span className="font-medium text-primary">{fmt(utilization, 1)} %</span>
                     </div>
 
                     {/* TVL */}
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-sm text-text-secondary dark:text-text-secondary-dark">
-                            TVL
-                        </span>
+                    <div>
+                        <span className="block text-sm text-text-secondary dark:text-text-secondary-dark">TVL (Total Locked)</span>
+                        <span className="font-medium text-primary">{fmt(tvl)} {symbol}</span>
+                    </div>
+
+                    {/* APY real */}
+                    <div>
+                        <span className="block text-sm text-text-secondary dark:text-text-secondary-dark">Rentabilidad estimada</span>
                         <span className="font-medium text-primary">
-                            {fmt(tvl)} {symbol}
+                            {apyLoading ? '…' : `${fmt(apy ?? 0, 2)} % APY`}
                         </span>
+                        {apy === 0 && !apyLoading && (
+                            <p className="text-xs text-text-secondary">Sin préstamos activos → APY 0 %</p>
+                        )}
                     </div>
 
                     {/* CTA */}
                     {showButton && (
                         <Link
                             href={`/markets/${symbol}`}
-                            className="
-                block w-full mt-2 text-center rounded-lg
-                py-2 bg-primary text-surface-light
-                hover:bg-primary-light transition"
+                            className="block w-full mt-2 text-center rounded-lg py-2 bg-primary text-surface-light hover:bg-primary-light transition"
                         >
-                            Detalles &rarr;
+                            Gestionar mercado {symbol}
                         </Link>
                     )}
                 </div>
