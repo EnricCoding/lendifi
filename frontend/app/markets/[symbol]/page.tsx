@@ -46,7 +46,7 @@ export default function MarketDetailPage() {
 
 
     return (
-        <div className="min-h-screen bg-bg-light dark:bg-bg-dark px-4 py-6 space-y-8">
+        <div className="min-h-screen bg-bg-light dark:bg-bg-dark px-10 py-6 space-y-8">
             {/* Header */}
             <div className="space-y-2">
                 <h1 className="text-3xl font-bold text-primary dark:text-primary-dark">
@@ -85,9 +85,9 @@ export default function MarketDetailPage() {
                 <p className="text-text-secondary dark:text-text-secondary-dark">
                     Selecciona una acción para interactuar con el protocolo. Asegúrate de tener fondos suficientes y revisa las instrucciones de cada operación.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
                     {/* Deposit */}
-                    <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-lg shadow-md">
+                    <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-lg shadow-md flex flex-col h-full">
                         <h3 className="text-xl font-semibold mb-2 text-secondary">
                             Depositar {cfg.symbol}
                         </h3>
@@ -98,12 +98,11 @@ export default function MarketDetailPage() {
                     </div>
 
                     {/* Borrow */}
-                    <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-lg shadow-md">
+                    <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-lg shadow-md flex flex-col h-full">
                         <h3 className="text-xl font-semibold mb-2 text-secondary">
                             Pedir prestado {cfg.symbol}
                         </h3>
                         <p className="text-text-secondary dark:text-text-secondary-dark text-sm mb-4">
-                            Solicita un préstamo de {cfg.symbol} contra tu colateral. Vigila tu Health Factor para evitar liquidaciones.
                             Aquí puedes pedir prestado hasta el máximo disponible en función de tu colateral y LTV (80%).
                         </p>
                         <BorrowForm
@@ -114,7 +113,7 @@ export default function MarketDetailPage() {
                     </div>
 
                     {/* Withdraw */}
-                    <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-lg shadow-md">
+                    <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-lg shadow-md flex flex-col h-full">
                         <h3 className="text-xl font-semibold mb-2 text-secondary">
                             Retirar {cfg.symbol}
                         </h3>
@@ -131,7 +130,7 @@ export default function MarketDetailPage() {
                     </div>
 
                     {/* Repay */}
-                    <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-lg shadow-md">
+                    <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-lg shadow-md flex flex-col h-full">
                         <h3 className="text-xl font-semibold mb-2 text-secondary">
                             Reembolsar {cfg.symbol}
                         </h3>

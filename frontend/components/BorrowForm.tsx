@@ -96,7 +96,7 @@ export function BorrowForm({ symbol, tokenAddress, poolAddress }: BorrowFormProp
 
             {/* input cantidad */}
             <div className={formLoading ? 'pointer-events-none opacity-60' : ''}>
-                <label htmlFor="amount" className="block text-sm font-medium mb-1">
+                <label htmlFor="amount" className="block text-sm font-medium mb-1 text-text-secondary">
                     Cantidad a pedir prestado
                 </label>
 
@@ -128,7 +128,7 @@ export function BorrowForm({ symbol, tokenAddress, poolAddress }: BorrowFormProp
                 {errors.amount && (
                     <p className="mt-1 text-sm text-danger">{errors.amount.message}</p>
                 )}
-                <p className="text-sm text-text-secondary dark:text-text-secondary-dark">
+                <p className="mt-1 text-sm text-text-secondary dark:text-text-secondary-dark">
                     Puedes pedir hasta{' '}
                     <strong>
                         {maxBorrowable.toFixed(2)} {symbol}

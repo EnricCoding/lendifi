@@ -1,24 +1,22 @@
 // frontend/hooks/useWithdraw.ts
+"use client";
+
 import { useEffect } from "react";
-import {
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  useAccount,
-} from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
+import { refreshPool } from "@/lib/refreshPool"; // ⬅️ helper
 import LendingPoolAbi from "@/abis/LendingPool.json";
 
 const POOL_ADDRESS = process.env.NEXT_PUBLIC_LENDING_POOL_ADDRESS!;
 
 /**
- * Retira colateral del pool.
- * @param tokenAddress Token que se retira
+ * Retira colateral del pool y refresca poolData + userPosition
+ * cuando la transacción se confirma.
  */
 export function useWithdraw(tokenAddress: string) {
-  const { address } = useAccount();
   const queryClient = useQueryClient();
 
-  /* 1⃣ firma & broadcast */
+  /* 1⃣  firma & broadcast */
   const {
     writeContract,
     data: txHash,
@@ -34,7 +32,7 @@ export function useWithdraw(tokenAddress: string) {
       args: [tokenAddress, amountWei],
     });
 
-  /* 2⃣ recibo */
+  /* 2⃣  recibo */
   const {
     isLoading: isWaitingReceipt,
     isSuccess,
@@ -42,22 +40,21 @@ export function useWithdraw(tokenAddress: string) {
     error: receiptError,
   } = useWaitForTransactionReceipt({ hash: txHash });
 
-  /* 3⃣ invalidar caché — prefijo 'userPosition' */
+  /* 3⃣  refrescar caché al éxito */
   useEffect(() => {
-    if (!isSuccess) return;
+    if (isSuccess) {
+      refreshPool(queryClient, POOL_ADDRESS, tokenAddress);
+    }
+  }, [isSuccess, queryClient, tokenAddress]);
 
-    // refresca cualquier query que empiece por ['userPosition']
-    queryClient.invalidateQueries({ queryKey: ["userPosition"] });
-    queryClient.invalidateQueries({ queryKey: ["poolData"] });
-  }, [isSuccess, queryClient]);
-
-  /* 4⃣ flags para la UI */
+  /* 4⃣  flags para la UI */
   const isProcessing = isBroadcasting || isWaitingReceipt;
+  const error = broadcastError ?? receiptError;
 
   return {
     withdraw,
     isProcessing,
     isSuccess,
-    error: broadcastError ?? receiptError,
+    error,
   };
 }

@@ -10,7 +10,7 @@ const ORACLE = process.env.NEXT_PUBLIC_ORACLE_ADDRESS!;
 
 export default function MarketsPage() {
     return (
-        <div className="min-h-screen bg-bg-light dark:bg-bg-dark px-4 py-6">
+        <div className="min-h-screen bg-bg-light dark:bg-bg-dark px-6 py-6">
             <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark mb-4">
                 Mercados Disponibles
             </h1>

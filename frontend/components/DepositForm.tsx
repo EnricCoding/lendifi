@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { useAccount, useBalance } from 'wagmi';
 import { useDeposit } from '@/hooks/useDeposit';
 import { useApprove } from '@/hooks/useApprove';
+import { toast } from 'sonner';
 
 const depositSchema = z.object({
     amount: z
@@ -72,7 +73,11 @@ export function DepositForm({
     /* deposit */
     const { deposit, isProcessing, isSuccess, error: txError } = useDeposit(tokenAddress);
     useEffect(() => {
-        if (isSuccess) reset();
+        if (isSuccess) {
+            toast.success('Depósito confirmado ✅');
+            reset({ amount: 0 });
+        }
+
     }, [isSuccess, reset]);
 
     /* form flags */
@@ -82,6 +87,7 @@ export function DepositForm({
     /* submit */
     const onSubmit = handleSubmit(async () => {
         if (amountWei === BigInt(0) || amountWei > balance) return;
+        toast('Enviando transacción…', { duration: 3000 });
         setSubmitting(true);
         try {
             await deposit(amountWei);
@@ -105,7 +111,7 @@ export function DepositForm({
 
             {/* ----- input ----- */}
             <div className={formLoading ? 'pointer-events-none opacity-60' : ''}>
-                <label htmlFor="amount" className="block text-sm font-medium mb-1">
+                <label htmlFor="amount" className="block text-sm font-medium mb-1 text-text-secondary">
                     Cantidad a depositar
                 </label>
                 <div className="relative">

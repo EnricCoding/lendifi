@@ -1,4 +1,6 @@
-// frontend/hooks/useDeposit.ts
+/* ─ frontend/hooks/useDeposit.ts ─ */
+"use client";
+
 import { useEffect } from "react";
 import {
   useWriteContract,
@@ -6,15 +8,22 @@ import {
   useAccount,
 } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
 import LendingPoolAbi from "@/abis/LendingPool.json";
+import { refreshPool } from "@/lib/refreshPool";
 
 const POOL_ADDRESS = process.env.NEXT_PUBLIC_LENDING_POOL_ADDRESS!;
 
+/**
+ * Ejecuta LendingPool.deposit() y refresca poolData + userPosition
+ * en cuanto la transacción queda minada.
+ */
 export function useDeposit(tokenAddress: string) {
   const { address } = useAccount();
   const queryClient = useQueryClient();
 
-  /* 1⃣  Emitimos la transacción */
+  /* 1⃣ - Emitir la transacción */
   const {
     writeContract,
     data: txHash,
@@ -30,7 +39,7 @@ export function useDeposit(tokenAddress: string) {
       args: [tokenAddress, amountWei],
     });
 
-  /* 2⃣  Esperamos el recibo */
+  /* 2⃣ - Esperar al recibo */
   const {
     isLoading: isWaitingReceipt,
     isSuccess,
@@ -38,30 +47,25 @@ export function useDeposit(tokenAddress: string) {
     error: receiptError,
   } = useWaitForTransactionReceipt({ hash: txHash });
 
-  /* 3⃣  Side-effects (una sola vez) */
+  /* 3⃣ - Refrescar queries cuando se confirma */
   useEffect(() => {
-    if (!isSuccess) return;
-    // ✅ tx confirmada → refrescar datos
-    queryClient.invalidateQueries({ queryKey: ["poolData"] });
-    if (address) {
-      queryClient.invalidateQueries({
-        queryKey: ["userPosition", POOL_ADDRESS, tokenAddress, address],
-      });
+    if (isSuccess) {
+      console.log("[useDeposit] ✅ Transacción confirmada", txHash);
+      refreshPool(queryClient, POOL_ADDRESS, tokenAddress);
     }
-  }, [isSuccess, queryClient, address, tokenAddress]);
+  }, [isSuccess, queryClient, tokenAddress]); //  ← tokenAddress añadido
 
+  /* 4⃣ - Errores */
   useEffect(() => {
     if (isError && receiptError) {
-      console.error("[useDeposit] ❌ failed", receiptError);
+      console.error("[useDeposit] ❌", receiptError);
+      toast.error("La transacción falló ❌");
     }
   }, [isError, receiptError]);
 
-  /* 4⃣  Flag para la UI */
-  const isProcessing = isBroadcasting || isWaitingReceipt;
-
   return {
     deposit,
-    isProcessing,
+    isProcessing: isBroadcasting || isWaitingReceipt,
     isSuccess,
     error: broadcastError ?? receiptError,
   };

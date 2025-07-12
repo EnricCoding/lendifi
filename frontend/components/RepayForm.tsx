@@ -109,7 +109,7 @@ export function RepayForm({
 
             {/* input cantidad */}
             <div className={formLoading ? 'pointer-events-none opacity-60' : ''}>
-                <label htmlFor="amount" className="block text-sm font-medium mb-1">
+                <label htmlFor="amount" className="block text-sm font-medium mb-1 text-text-secondary">
                     Cantidad a reembolsar
                 </label>
                 <div className="relative">

@@ -1,24 +1,22 @@
 // frontend/hooks/useRepay.ts
+"use client";
+
 import { useEffect } from "react";
-import {
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  useAccount,
-} from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
+import { refreshPool } from "@/lib/refreshPool"; // ⬅️ helper
 import LendingPoolAbi from "@/abis/LendingPool.json";
 
 const POOL_ADDRESS = process.env.NEXT_PUBLIC_LENDING_POOL_ADDRESS!;
 
 /**
- * Hook para reembolsar (repay) deuda.
- * @param tokenAddress Dirección del token a reembolsar
+ * Hook para reembolsar (repay) deuda y forzar que poolData + userPosition
+ * se refresquen en cuanto la transacción queda confirmada.
  */
 export function useRepay(tokenAddress: string) {
-  const { address } = useAccount();
   const queryClient = useQueryClient();
 
-  /* 1⃣   Emitimos la transacción */
+  /* 1⃣  Emitir la transacción */
   const {
     writeContract,
     data: txHash,
@@ -34,7 +32,7 @@ export function useRepay(tokenAddress: string) {
       args: [tokenAddress, amountWei],
     });
 
-  /* 2⃣   Esperamos el recibo */
+  /* 2⃣  Esperar recibo */
   const {
     isLoading: isWaitingReceipt,
     isSuccess,
@@ -42,37 +40,23 @@ export function useRepay(tokenAddress: string) {
     error: receiptError,
   } = useWaitForTransactionReceipt({ hash: txHash });
 
-  /* 3⃣   Invalidamos TODAS las queries de posición y pool */
+  /* 3⃣  Refrescar caché al éxito */
   useEffect(() => {
-    if (!isSuccess) return;
+    if (isSuccess) {
+      refreshPool(queryClient, POOL_ADDRESS, tokenAddress);
+    }
+  }, [isSuccess, queryClient, tokenAddress]);
 
-    // userPosition queries
-    queryClient.invalidateQueries({
-      predicate: (q) =>
-        Array.isArray(q.queryKey) && q.queryKey[0] === "userPosition",
-    });
-
-    // poolData queries
-    queryClient.invalidateQueries({
-      predicate: (q) =>
-        Array.isArray(q.queryKey) && q.queryKey[0] === "poolData",
-    });
-  }, [isSuccess, queryClient]);
-
-  /* 4⃣   Log de error (opcional) */
+  /* 4⃣  Log de error (opcional) */
   useEffect(() => {
     if (isError && receiptError) {
-      console.error("[useRepay] ❌ failed", receiptError);
+      console.error("[useRepay] ❌", receiptError);
     }
   }, [isError, receiptError]);
 
-  /* 5⃣   Flags para la UI */
+  /* Flags para la UI */
   const isProcessing = isBroadcasting || isWaitingReceipt;
+  const error = broadcastError ?? receiptError;
 
-  return {
-    repay, // (amountWei: bigint) => void
-    isProcessing, // boolean
-    isSuccess, // boolean
-    error: broadcastError ?? receiptError, // Error | undefined
-  };
+  return { repay, isProcessing, isSuccess, error };
 }

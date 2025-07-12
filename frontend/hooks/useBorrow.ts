@@ -1,24 +1,22 @@
 // frontend/hooks/useBorrow.ts
+"use client";
+
 import { useEffect } from "react";
-import {
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  useAccount,
-} from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
+import { refreshPool } from "@/lib/refreshPool";
 import LendingPoolAbi from "@/abis/LendingPool.json";
 
 const POOL_ADDRESS = process.env.NEXT_PUBLIC_LENDING_POOL_ADDRESS!;
 
 /**
- * Hook para pedir prestado.
- * @param tokenAddress Dirección del token que se va a pedir
+ * Hook para ejecutar LendingPool.borrow() y refrescar
+ * poolData + userPosition en cuanto la tx se mina.
  */
 export function useBorrow(tokenAddress: string) {
-  const { address } = useAccount();
   const queryClient = useQueryClient();
 
-  /* 1⃣  emitir tx */
+  /* 1⃣ emitir la transacción */
   const {
     writeContract,
     data: txHash,
@@ -34,7 +32,7 @@ export function useBorrow(tokenAddress: string) {
       args: [tokenAddress, amountWei],
     });
 
-  /* 2⃣  esperar recibo */
+  /* 2⃣ esperar el recibo */
   const {
     isLoading: isWaitingReceipt,
     isSuccess,
@@ -42,29 +40,24 @@ export function useBorrow(tokenAddress: string) {
     error: receiptError,
   } = useWaitForTransactionReceipt({ hash: txHash });
 
-  /* 3⃣  invalidar TODAS las queries de posición y pool */
+  /* 3⃣ refrescar datos al éxito */
   useEffect(() => {
-    if (!isSuccess) return;
+    if (isSuccess) {
+      refreshPool(queryClient, POOL_ADDRESS, tokenAddress);
+    }
+  }, [isSuccess, queryClient, tokenAddress]);
 
-    queryClient.invalidateQueries({
-      predicate: (q) =>
-        Array.isArray(q.queryKey) && q.queryKey[0] === "userPosition",
-    });
-    queryClient.invalidateQueries({
-      predicate: (q) =>
-        Array.isArray(q.queryKey) && q.queryKey[0] === "poolData",
-    });
-  }, [isSuccess, queryClient]);
-
-  /* 4⃣  log de error */
+  /* 4⃣ logging opcional */
   useEffect(() => {
     if (isError && receiptError) {
       console.error("[useBorrow] ❌", receiptError);
     }
   }, [isError, receiptError]);
 
-  const isProcessing = isBroadcasting || isWaitingReceipt;
-  const error = broadcastError ?? receiptError;
-
-  return { borrow, isProcessing, isSuccess, error };
+  return {
+    borrow,
+    isProcessing: isBroadcasting || isWaitingReceipt,
+    isSuccess,
+    error: broadcastError ?? receiptError,
+  };
 }
