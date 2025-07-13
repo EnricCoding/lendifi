@@ -3,23 +3,27 @@ import { useQuery } from "@tanstack/react-query";
 import { ethers } from "ethers";
 import InterestRateModelAbi from "@/abis/InterestRateModel.json";
 
-// Constantes de escala
-const WAD = BigInt("1000000000000000000"); // 1e18
-const RAY = BigInt("1000000000000000000000000000"); // 1e27
+/* ─── constantes sin literales BigInt ────────────────────────────── */
+// 1e18  →  18 ceros
+const WAD = BigInt("1000000000000000000");
+// 1e27  →  27 ceros
+const RAY = BigInt("1000000000000000000000000000");
+
 const SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
 
 /**
- * Hook para obtener la APY estimada de depósito en un pool.
- * Usa getDepositRate(utilizationWad, reserveFactorWad) del contrato.
- * @param rateModelAddress Dirección del InterestRateModel
- * @param totalCollateral Total de colateral (bigint, en wei)
- * @param totalDebt Total de deuda (bigint, en wei)
+ * APY estimada para depósitos.
+ *
+ * @param rateModelAddress Address del InterestRateModel
+ * @param totalCollateral  BigInt (wei)
+ * @param totalDebt        BigInt (wei)
  */
 export function useDepositApy(
   rateModelAddress: string,
   totalCollateral: bigint,
   totalDebt: bigint
 ) {
+  
   return useQuery<number>({
     queryKey: [
       "depositApy",
@@ -28,40 +32,45 @@ export function useDepositApy(
       totalDebt.toString(),
     ],
     queryFn: async () => {
-      const ethereum = (window as any).ethereum;
-      if (!ethereum) throw new Error("No Ethereum provider found");
-      const provider = new ethers.BrowserProvider(ethereum as any);
-      const contract = new ethers.Contract(
+      /* provider + contrato */
+      const eth = (window as any).ethereum;
+      if (!eth) throw new Error("No Ethereum provider");
+
+      const provider = new ethers.BrowserProvider(eth);
+      const model = new ethers.Contract(
         rateModelAddress,
         (InterestRateModelAbi as any).abi,
         provider
       );
 
-      // Cálculo de utilización en WAD (1e18)
-      const coll = totalCollateral;
-      const debt = totalDebt;
-      const utilWad = coll === BigInt(0) ? BigInt(0) : (debt * WAD) / coll;
+      /* utilización en WAD */
+      const utilWad =
+        totalCollateral === BigInt(0)
+          ? BigInt(0)
+          : (totalDebt * WAD) / totalCollateral;
 
-      // Reserve factor fijo: 10% = 0.1 WAD
-      const reserveFactorWad = WAD / BigInt(10);
+      /* reserve factor fijo 10 % */
+      const reserveFactorWad = WAD / BigInt(10); // 0.1 WAD
 
-      // Llamada al contrato: tasa en RAY/segundo
-      const rawRateRay: bigint = await contract.getDepositRate(
+      /* tasa (ray/seg) */
+      const rawRateRay: bigint = await model.getDepositRate(
         utilWad,
         reserveFactorWad
       );
 
-      // Convertir de RAY/segundo a decimal por segundo
-      const ratePerSec = Number(rawRateRay) / 1e27;
+      /* ray → decimal/seg  ◀︎ sin BigInt al dividir */
+      const ratePerSec = Number(rawRateRay) / Number(RAY);
 
-      // APR simple anual
+      /* APR anual simple */
       const apr = ratePerSec * SECONDS_PER_YEAR;
 
-      // APY aproximado (sin composición intra-anual)
-      const apy = (Math.pow(1 + apr, 1) - 1) * 100;
-      return apy;
+      console.log(apr, "APR anual simple");
+      console.log(Math.pow(1 + apr, 1), "APY anual simple");
+
+      /* APY ≈ APR (sin composición intra-año) */
+      return (Math.pow(1 + apr, 1) - 1) * 100;
     },
-    enabled: Boolean(rateModelAddress && totalCollateral >= BigInt(0)),
+    enabled: !!rateModelAddress,
     staleTime: 60_000,
     refetchInterval: 60_000,
   });

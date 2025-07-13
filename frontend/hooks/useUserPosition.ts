@@ -1,31 +1,24 @@
 // hooks/useUserPosition.ts
-import { useQuery } from "@tanstack/react-query";
+"use client";
+
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
-import { usePoolData } from "./usePoolData";
 import { ethers } from "ethers";
+
+import { usePoolData } from "./usePoolData";
 import LendingPoolAbi from "@/abis/LendingPool.json";
 
-/* --- tipos originales --- */
+/* ──────────────── tipos ──────────────── */
 export interface UserPosition {
-  collateral: bigint;
-  debt: bigint;
-  collateralValue: number;
-  debtValue: number;
-  healthFactor: number;
+  collateral: bigint;      // unidades del token
+  debt: bigint;            // unidades del token
+  collateralValue: number; // USD
+  debtValue: number;       // USD
+  healthFactor: number;    // decimal (∞ si no hay deuda)
 }
 
 /**
- * Obtiene la posición del usuario:
- *  · colateral / deuda en raw (BigInt)
- *  · su valor en USD
- *  · health-factor               ( ≈ Aave )
- *
- * 🔄  Devuelve lo mismo que antes **y además**:
- *  · `deposited`   → alias de collateral
- *  · `borrowed`    → alias de debt
- *  · `loading`     → boolean de comodidad
- *
- * 👉  La firma **NO cambia** para no romper las pantallas existentes.
+ * Devuelve la posición del usuario en la pool y alias de ayuda.
  */
 export function useUserPosition(
   poolAddress: string,
@@ -33,57 +26,72 @@ export function useUserPosition(
   oracleAddress: string
 ) {
   const { address, isConnected } = useAccount();
-
-  /* reutilizamos tu hook de pool para precio */
   const poolQuery = usePoolData(poolAddress, tokenAddress, oracleAddress);
 
-  const query = useQuery<UserPosition>({
+  /* ───────────── query react-query ───────────── */
+  const query: UseQueryResult<UserPosition, Error> = useQuery<UserPosition>({
     queryKey: ["userPosition", poolAddress, tokenAddress, address],
-    queryFn: async () => {
+    enabled: isConnected && !!address && poolQuery.isSuccess,
+    staleTime: 10_000,
+    refetchInterval: 30_000,
+
+    /* --------------- loader --------------- */
+    queryFn: async (): Promise<UserPosition> => {
       if (!address) throw new Error("Wallet no conectada");
 
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
-      const poolContract = new ethers.Contract(
+      console.log("[useUserPosition] 🔄 fetch", { poolAddress, tokenAddress, address });
+
+      const provider = new ethers.BrowserProvider(
+        (window as unknown as { ethereum: any }).ethereum
+      );
+
+      const pool = new ethers.Contract(
         poolAddress,
-        // 👉 compatibilidad con abi exportado como objeto o como { abi: [...] }
         (LendingPoolAbi as any).abi ?? LendingPoolAbi,
         provider
       );
 
-      /* leer datos en paralelo */
-      const [rawCollateral, rawDebt] = await Promise.all([
-        poolContract.getUserCollateral(tokenAddress, address),
-        poolContract.getUserDebt(tokenAddress, address),
-      ]);
+      const erc20 = new ethers.Contract(
+        tokenAddress,
+        ["function decimals() view returns (uint8)"],
+        provider
+      );
 
-      const price = poolQuery.data?.price ?? 0;
-      const collateralValue = Number(rawCollateral) * price;
-      const debtValue = Number(rawDebt) * price;
+      const [rawCollateral, rawDebt, healthFactorRaw, tokenDecBn] =
+        (await Promise.all([
+          pool.getUserCollateral(tokenAddress, address),
+          pool.getUserDebt(tokenAddress, address),
+          pool.getHealthFactor(tokenAddress, address), // WAD
+          erc20.decimals(),
+        ])) as [bigint, bigint, bigint, bigint];
+
+      const tokenDec = Number(tokenDecBn);      // p.ej. 6 para USDC
+      const factor = 10 ** tokenDec;
+
+      const priceUsd = poolQuery.data!.price;
+
+      const collateralValue = (Number(rawCollateral) / factor) * priceUsd;
+      const debtValue       = (Number(rawDebt)       / factor) * priceUsd;
+
       const healthFactor =
-        debtValue > 0 ? collateralValue / debtValue : Infinity;
+        rawDebt === BigInt(0) ? Infinity : Number(healthFactorRaw) / 1e18;
 
       return {
-        collateral: rawCollateral as bigint,
-        debt: rawDebt as bigint,
+        collateral: rawCollateral,
+        debt: rawDebt,
         collateralValue,
         debtValue,
         healthFactor,
-      };
+      }
     },
-    enabled: isConnected && !!address && poolQuery.isSuccess,
-    staleTime: 10_000,
-    refetchInterval: 30_000,
   });
 
-  /* ------------------------------------------------------------------ *
-   *  ⬇️  EXTENSIÓN *mínima*: solo añadimos alias + flag de carga
-   * ------------------------------------------------------------------ */
+  /* ───────── alias para el UI ───────── */
   return {
-    ...query, // 👈 conservas todas las props de React-Query
-    deposited: query.data?.collateral ?? BigInt(0), // alias - UX
-    borrowed: query.data?.debt ?? BigInt(0), // alias - UX
-    healthFactor: query.data?.healthFactor ?? Infinity, // ➕ NUEVO alias
-    loading: query.isLoading || query.isFetching, // alias - UX
+    ...query,
+    deposited:   query.data?.collateral    ?? BigInt(0),
+    borrowed:    query.data?.debt          ?? BigInt(0),
+    healthFactor: query.data?.healthFactor ?? Infinity,
+    loading: query.isLoading || query.isFetching,
   };
-}
-/* ---------------------------------------------------------------------- */
+};

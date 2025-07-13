@@ -7,7 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { refreshPool } from "@/lib/refreshPool";
 import LendingPoolAbi from "@/abis/LendingPool.json";
 
-const POOL_ADDRESS = process.env.NEXT_PUBLIC_LENDING_POOL_ADDRESS!;
+const POOL_ADDRESS = process.env
+  .NEXT_PUBLIC_LENDING_POOL_ADDRESS! as `0x${string}`;
 
 /**
  * Hook para ejecutar LendingPool.borrow() y refrescar
@@ -26,7 +27,7 @@ export function useBorrow(tokenAddress: string) {
 
   const borrow = (amountWei: bigint) =>
     writeContract({
-      address: POOL_ADDRESS as `0x${string}`,
+      address: POOL_ADDRESS,
       abi: (LendingPoolAbi as any).abi ?? LendingPoolAbi,
       functionName: "borrow",
       args: [tokenAddress, amountWei],
@@ -42,9 +43,13 @@ export function useBorrow(tokenAddress: string) {
 
   /* 3⃣ refrescar datos al éxito */
   useEffect(() => {
-    if (isSuccess) {
-      refreshPool(queryClient, POOL_ADDRESS, tokenAddress);
-    }
+    if (!isSuccess) return;
+    // refresca la data de la pool
+    refreshPool(queryClient, POOL_ADDRESS, tokenAddress);
+    // invalida también la posición del usuario para que se refetch inmediato
+    queryClient.invalidateQueries({
+      queryKey: ["userPosition", POOL_ADDRESS, tokenAddress],
+    });
   }, [isSuccess, queryClient, tokenAddress]);
 
   /* 4⃣ logging opcional */

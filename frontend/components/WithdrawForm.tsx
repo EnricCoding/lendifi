@@ -37,30 +37,21 @@ export function WithdrawForm({
     const {
         deposited,
         borrowed,
-        healthFactor,
         loading: posLoading,
     } = useUserPosition(
         poolAddress,
         tokenAddress,
-        process.env.NEXT_PUBLIC_ORACLE_ADDRESS!
+        process.env.NEXT_PUBLIC_ORACLE_ADDRESS!,
     );
 
     /* config mercado */
     const m = MARKETS[symbol];
     const factor = 10 ** m.decimals;
-    const ltvRatio = m.ltvRatio / 100; // ej. 0.8
+    const ltv = m.ltvRatio / 100; // 0.8
 
-    /* máx retirables sin bajar HF por debajo de 1 */
-    const depositedTokens = Number(deposited) / factor;
-    const borrowedTokens = Number(borrowed) / factor;
-
-    const maxByCollateral = depositedTokens; // no puedes retirar más que tienes
-    const maxByHF =
-        borrowedTokens === 0
-            ? depositedTokens // sin deuda puedes retirar todo
-            : depositedTokens - borrowedTokens / ltvRatio; // mantener HF >=1
-
-    const maxWithdrawable = Math.max(0, Math.min(maxByCollateral, maxByHF));
+    /* cantidades en token */
+    const depTok = Number(deposited) / factor;
+    const debtTok = Number(borrowed) / factor;
 
     /* react-hook-form */
     const {
@@ -74,17 +65,29 @@ export function WithdrawForm({
         defaultValues: { amount: 0 },
     });
     const rawInput = watch('amount');
-    const amountValue = typeof rawInput === 'number' && !isNaN(rawInput) ? rawInput : 0;
+    const amountValue =
+        typeof rawInput === 'number' && !isNaN(rawInput) ? rawInput : 0;
     const amountWei = BigInt(Math.floor(amountValue * factor));
+
+    /* HF futuro tras la retirada */
+    const futureHf =
+        debtTok === 0
+            ? Infinity
+            : (depTok - amountValue) / (ltv * debtTok);
+
+    /* cálculo del máximo permitiendo HF ≥ 1 */
+    const maxByCollateral = depTok;
+    const maxByHF = debtTok === 0 ? depTok : depTok - debtTok / ltv;
+    const maxWithdrawable = Math.max(0, Math.min(maxByCollateral, maxByHF));
 
     /* hook withdraw */
     const { withdraw, isProcessing, isSuccess, error } = useWithdraw(tokenAddress);
 
-    /* toast efectos */
+    /* toasts */
     useEffect(() => {
         if (isSuccess) {
             toast.success('Retiro confirmado');
-            reset();
+            reset({ amount: 0 });
         }
         if (error) toast.error('La transacción falló');
     }, [isSuccess, error, reset]);
@@ -94,6 +97,7 @@ export function WithdrawForm({
         if (
             amountValue <= 0 ||
             amountValue > maxWithdrawable ||
+            futureHf < 1 ||
             isProcessing
         )
             return;
@@ -106,7 +110,7 @@ export function WithdrawForm({
 
     return (
         <form onSubmit={onSubmit} className="space-y-4 relative">
-            {/* overlay while loading */}
+            {/* overlay */}
             {formLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-surface-light/60 dark:bg-surface-dark/60 rounded z-10">
                     <svg className="animate-spin h-6 w-6 text-secondary" viewBox="0 0 24 24">
@@ -145,21 +149,29 @@ export function WithdrawForm({
                         MAX
                     </button>
                 </div>
+
                 {errors.amount ? (
                     <p className="mt-1 text-sm text-danger">{errors.amount.message}</p>
                 ) : (
                     <p className="mt-1 text-sm text-text-secondary dark:text-text-secondary-dark">
                         Puedes retirar hasta{' '}
                         <strong>{maxWithdrawable.toFixed(2)} {symbol}</strong>{' '}
-                        sin que tu Health Factor baje de 1,0.
+                        manteniendo tu Health Factor ≥ 1.
+                    </p>
+                )}
+
+                {/* aviso HF */}
+                {amountValue > 0 && futureHf < 1 && (
+                    <p className="mt-1 text-xs text-danger">
+                        Esta retirada haría que tu Health-Factor bajase de 1 → la tx fallará
                     </p>
                 )}
             </div>
 
-            {/* botón submit */}
+            {/* botón */}
             <button
                 type="submit"
-                disabled={formLoading || amountValue > maxWithdrawable || amountValue <= 0}
+                disabled={formLoading || futureHf < 1 || amountValue <= 0}
                 className="w-full flex justify-center items-center py-2 bg-primary
                    text-surface-light rounded-lg hover:bg-primary-light
                    transition disabled:opacity-50"

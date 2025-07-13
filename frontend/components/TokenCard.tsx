@@ -20,10 +20,6 @@ export function TokenCard({
   oracleAddress,
   showUserData = true,
 }: TokenCardProps) {
-  console.log(
-    `Rendering TokenCard for ${symbol} with pool=${poolAddress}, token=${tokenAddress}, showUserData=${showUserData}`
-  );
-
   const pool = usePoolData(poolAddress, tokenAddress, oracleAddress);
   const user = useUserPosition(poolAddress, tokenAddress, oracleAddress);
 
@@ -33,21 +29,32 @@ export function TokenCard({
   const loading = pool.isLoading || (showUserData && user.isLoading);
   const error = pool.error || (showUserData && user.error);
 
-  const collateral = user.data?.collateralValue;
-  const debt = user.data?.debtValue;
+  const collateral = user.data?.collateralValue ?? 0;
+  const debt = user.data?.debtValue ?? 0;
   const hf = user.data?.healthFactor ?? Infinity;
+
   const price = pool.data?.price ?? 0;
   const totalCollateral = pool.data?.totalCollateral ?? BigInt(0);
   const totalDebt = pool.data?.totalDebt ?? BigInt(0);
+  const rawRayRate = pool.data?.borrowApr ?? BigInt(0);  // ray/sec from your hook
+  const rawSupplyRate = pool.data?.depositApy ?? BigInt(0);  // ray/sec
+
+  // convert ray/sec → annual %:
+  const secondsPerYear = 31_536_000;
+  const aprDecimal = (Number(rawRayRate) / 1e27) * secondsPerYear;
+  const apyDecimal = (Number(rawSupplyRate) / 1e27) * secondsPerYear;
+  const aprPercent = aprDecimal * 100;
+  const apyPercent = apyDecimal * 100;
 
   const utilization =
     totalCollateral > BigInt(0)
       ? (Number(totalDebt) / Number(totalCollateral)) * 100
       : 0;
 
+  // Health-factor classes
   let hfClass = 'text-gray-700 dark:text-gray-300';
   if (hf <= 1) hfClass = 'text-yellow-600 dark:text-yellow-400';
-  if (hf < 1) hfClass = 'text-red-600 dark:text-red-400';
+  if (hf < 1) hfClass = 'text-red-600   dark:text-red-400';
 
   return (
     <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-md space-y-4 text-gray-900 dark:text-gray-100">
@@ -56,14 +63,12 @@ export function TokenCard({
       {(!mounted || loading) && (
         <div className="flex flex-col items-center space-y-2">
           <div className="w-6 h-6 border-4 border-t-indigo-600 border-gray-200 rounded-full animate-spin" />
-          <p className="text-gray-600 dark:text-gray-400">Loading data...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading data…</p>
         </div>
       )}
 
       {mounted && !loading && error && (
-        <div className="flex flex-col items-center space-y-2">
-          <p className="text-red-600">Error loading {symbol}</p>
-        </div>
+        <p className="text-red-600">Error loading {symbol}</p>
       )}
 
       {mounted && !loading && !error && (
@@ -71,40 +76,59 @@ export function TokenCard({
           {/* Price */}
           <div>
             <p className="text-gray-600 dark:text-gray-400">Price</p>
-            <p className="font-medium">${price.toFixed(4)} USD</p>
+            <p className="font-medium text-primary">
+              ${price.toFixed(2)} USD
+            </p>
           </div>
+
           {/* Utilization */}
           <div>
             <p className="text-gray-600 dark:text-gray-400">Utilization</p>
-            <p className="font-medium">{utilization.toFixed(1)}%</p>
+            <p className="font-medium text-primary">
+              {utilization.toFixed(2)}%
+            </p>
           </div>
 
-          {showUserData ? (
-            collateral !== undefined && debt !== undefined ? (
-              <>
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400">Collateral</p>
-                  <p className="font-medium">${collateral.toFixed(2)}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400">Debt</p>
-                  <p className="font-medium">${debt.toFixed(2)}</p>
-                </div>
-                <Tooltip content="Health Factor = collateral / debt">
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400">Health Factor</p>
-                    <p className={`${hfClass} font-semibold`}>
-                      {isFinite(hf) ? hf.toFixed(2) : '∞'}
-                    </p>
-                  </div>
-                </Tooltip>
-              </>
-            ) : (
+          {/* Borrow APR */}
+          <div>
+            <p className="text-gray-600 dark:text-gray-400">Borrow APR</p>
+            <p className="font-medium text-primary">
+              {aprPercent.toFixed(2)}%
+            </p>
+          </div>
+
+          {/* Deposit APY */}
+          <div>
+            <p className="text-gray-600 dark:text-gray-400">Deposit APY</p>
+            <p className="font-medium text-primary">
+              {apyPercent.toFixed(2)}%
+            </p>
+          </div>
+
+          {showUserData && (
+            <>
               <div>
-                <p className="text-yellow-600">No data for {symbol}</p>
+                <p className="text-gray-600 dark:text-gray-400">Collateral</p>
+                <p className="font-medium text-primary">
+                  ${collateral.toFixed(2)}
+                </p>
               </div>
-            )
-          ) : null}
+
+              <div>
+                <p className="text-gray-600 dark:text-gray-400">Debt</p>
+                <p className="font-medium text-primary">
+                  ${debt.toFixed(2)}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-gray-600 dark:text-gray-400">Health Factor</p>
+                <p className={`${hfClass} font-medium text-primary`}>
+                  {isFinite(hf) ? hf.toFixed(2) : '∞'}
+                </p>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

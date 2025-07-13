@@ -41,6 +41,12 @@ export default function MarketDetailPage() {
         ORACLE                // oracleAddress
     );
 
+    console.log("[MarketDetailPage] User position:", {
+        deposited,
+        borrowed,
+        healthFactor,
+    });
+
 
     // 3) Variables de entorno
 

@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePoolData } from '@/hooks';
+import { useDepositApy } from '@/hooks/useDepositApy';          // ➜ nuevo
 import { Tooltip } from './ui/Tooltip';
 import { MARKETS } from '@/config/markets';
 
@@ -15,7 +16,7 @@ const fmt = (n: number, digits = 2, locale = 'es-ES') =>
     }).format(n);
 
 interface MarketCardProps {
-    symbol: keyof typeof MARKETS;     // <─ ya tipado con tus mercados
+    symbol: keyof typeof MARKETS;
     tokenAddress: string;
     poolAddress: string;
     oracleAddress: string;
@@ -29,9 +30,9 @@ export function MarketCard({
     oracleAddress,
     showButton = true,
 }: MarketCardProps) {
+    /* pool info ----------------------------------------------------------- */
     const pool = usePoolData(poolAddress, tokenAddress, oracleAddress);
     const [mounted, setMounted] = useState(false);
-
     useEffect(() => setMounted(true), []);
 
     const loading = pool.isLoading;
@@ -41,26 +42,33 @@ export function MarketCard({
     const totalCollateral = pool.data?.totalCollateral ?? BigInt(0);
     const totalDebt = pool.data?.totalDebt ?? BigInt(0);
 
-    /* decimales correctos según MARKETS */
+    /* APY ----------------------------------------------------------------- */
+    const RATE_MODEL = process.env.NEXT_PUBLIC_RATE_MODEL_ADDRESS!;
+    const {
+        data: apy,
+        isLoading: apyLoading,
+        error: apyErr,
+    } = useDepositApy(RATE_MODEL, totalCollateral, totalDebt);
+
+    /* métricas derivadas -------------------------------------------------- */
     const decimals = MARKETS[symbol].decimals;
     const tvl = Number(totalCollateral) / 10 ** decimals;
-
     const utilization =
         totalCollateral > BigInt(0)
             ? (Number(totalDebt) / Number(totalCollateral)) * 100
             : 0;
 
+    /* ─────────────── JSX ─────────────── */
     return (
         <div className="
       p-4 rounded-xl shadow hover:shadow-lg transition
       border border-secondary-light dark:border-secondary
-      bg-surface-light dark:bg-surface-dark
-    ">
+      bg-surface-light dark:bg-surface-dark">
             <h3 className="text-lg font-bold text-primary dark:text-primary-dark mb-3">
                 {symbol}
             </h3>
 
-            {/* Loader */}
+            {/* Loader global */}
             {(!mounted || loading) && (
                 <div className="flex justify-center py-5">
                     <svg className="animate-spin h-6 w-6 text-secondary dark:text-secondary-dark" viewBox="0 0 24 24">
@@ -70,7 +78,7 @@ export function MarketCard({
                 </div>
             )}
 
-            {/* Error */}
+            {/* Error de pool */}
             {mounted && !loading && error && (
                 <p className="text-danger text-sm">No se pudo obtener los datos del mercado.</p>
             )}
@@ -90,11 +98,8 @@ export function MarketCard({
 
                     {/* Utilización */}
                     <div>
-                        <span className="block text-sm text-text-secondary dark:text-text-secondary-dark flex items-center gap-1">
-                            Pool prestado
-                            <Tooltip content="Porcentaje del total depositado que está actualmente prestado">
-                                <span className="cursor-help text-secondary dark:text-secondary-dark">ℹ️</span>
-                            </Tooltip>
+                        <span className="block text-sm text-text-secondary dark:text-text-secondary-dark items-center gap-1">
+                            Pool prestado (Porcentaje del total depositado que está actualmente prestado)
                         </span>
                         <span className="font-medium text-primary">
                             {fmt(utilization, 1)} %
@@ -111,8 +116,19 @@ export function MarketCard({
                         </span>
                     </div>
 
-                    {/* Rentabilidad estimada  (placeholder, si ya la calculas, déjala) */}
-                    {/* <div>...</div> */}
+                    {/* APY estimada */}
+                    <div>
+                        <span className="block text-sm text-text-secondary dark:text-text-secondary-dark">
+                            Rentabilidad estimada
+                        </span>
+                        {apyErr ? (
+                            <span className="text-danger text-sm">–</span>
+                        ) : (
+                            <span className="font-medium text-primary">
+                                {apyLoading ? '…' : `${fmt(apy ?? 0, 2)} % APY`}
+                            </span>
+                        )}
+                    </div>
 
                     {/* CTA opcional */}
                     {showButton && (

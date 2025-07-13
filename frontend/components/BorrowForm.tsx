@@ -25,16 +25,25 @@ interface BorrowFormProps {
     poolAddress: string;
 }
 
-export function BorrowForm({ symbol, tokenAddress, poolAddress }: BorrowFormProps) {
-    /* montar */
+export function BorrowForm({
+    symbol,
+    tokenAddress,
+    poolAddress,
+}: BorrowFormProps) {
+    /* mount */
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
 
-    /* datos on-chain */
-    const { deposited, borrowed, loading: posLoading } = useUserPosition(
+    /* posición on-chain */
+    const {
+        deposited,
+        borrowed,
+        healthFactor,          // ⬅︎ ahora lo tenemos
+        loading: posLoading,
+    } = useUserPosition(
         poolAddress,
         tokenAddress,
-        process.env.NEXT_PUBLIC_ORACLE_ADDRESS!
+        process.env.NEXT_PUBLIC_ORACLE_ADDRESS!,
     );
 
     /* config mercado */
@@ -42,7 +51,8 @@ export function BorrowForm({ symbol, tokenAddress, poolAddress }: BorrowFormProp
     const factor = 10 ** m.decimals;
     const maxBorrowable =
         mounted && !posLoading
-            ? (Number(deposited) / factor) * (m.ltvRatio / 100) - Number(borrowed) / factor
+            ? (Number(deposited) / factor) * (m.ltvRatio / 100) -
+            Number(borrowed) / factor
             : 0;
 
     /* react-hook-form */
@@ -57,8 +67,18 @@ export function BorrowForm({ symbol, tokenAddress, poolAddress }: BorrowFormProp
         defaultValues: { amount: 0 },
     });
     const rawInput = watch('amount');
-    const amountValue = typeof rawInput === 'number' && !isNaN(rawInput) ? rawInput : 0;
+    const amountValue =
+        typeof rawInput === 'number' && !isNaN(rawInput) ? rawInput : 0;
     const amountWei = BigInt(Math.floor(amountValue * factor));
+
+    /* calcular HF hipotético */
+    const ltv = m.ltvRatio / 100; // 0.8
+    const depositedTok = Number(deposited) / factor;
+    const borrowedTok = Number(borrowed) / factor;
+    const futureHf =
+        amountValue === 0
+            ? Infinity
+            : depositedTok / (ltv * (borrowedTok + amountValue));
 
     /* hook borrow */
     const { borrow, isProcessing, isSuccess, error } = useBorrow(tokenAddress);
@@ -74,29 +94,50 @@ export function BorrowForm({ symbol, tokenAddress, poolAddress }: BorrowFormProp
 
     /* submit */
     const onSubmit = handleSubmit(() => {
-        if (amountValue <= 0 || amountValue > maxBorrowable) return;
+        if (
+            amountValue <= 0 ||
+            amountValue > maxBorrowable ||
+            futureHf < 1 // bloquear si caería por debajo de 1
+        )
+            return;
         toast('Enviando transacción…', { duration: 3000 });
         borrow(amountWei);
     });
 
-    /* flag general de carga */
     const formLoading = !mounted || posLoading || isProcessing;
 
     return (
         <form onSubmit={onSubmit} className="space-y-4 relative">
-            {/* overlay spinner mientras carga */}
+            {/* overlay spinner */}
             {formLoading && (
                 <div className="absolute inset-0 flex justify-center items-center bg-surface-light/60 dark:bg-surface-dark/60 rounded-lg z-10">
-                    <svg className="animate-spin h-6 w-6 text-secondary" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    <svg
+                        className="animate-spin h-6 w-6 text-secondary"
+                        viewBox="0 0 24 24"
+                    >
+                        <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                        />
+                        <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
                     </svg>
                 </div>
             )}
 
-            {/* input cantidad */}
+            {/* input */}
             <div className={formLoading ? 'pointer-events-none opacity-60' : ''}>
-                <label htmlFor="amount" className="block text-sm font-medium mb-1 text-text-secondary">
+                <label
+                    htmlFor="amount"
+                    className="block text-sm font-medium mb-1 text-text-secondary"
+                >
                     Cantidad a pedir prestado
                 </label>
 
@@ -128,6 +169,7 @@ export function BorrowForm({ symbol, tokenAddress, poolAddress }: BorrowFormProp
                 {errors.amount && (
                     <p className="mt-1 text-sm text-danger">{errors.amount.message}</p>
                 )}
+
                 <p className="mt-1 text-sm text-text-secondary dark:text-text-secondary-dark">
                     Puedes pedir hasta{' '}
                     <strong>
@@ -135,20 +177,38 @@ export function BorrowForm({ symbol, tokenAddress, poolAddress }: BorrowFormProp
                     </strong>{' '}
                     (LTV {m.ltvRatio}%).
                 </p>
+
+                {/* aviso HF */}
+                {amountValue > 0 && futureHf < 1 && (
+                    <p className="mt-1 text-xs text-danger">
+                        Esta cantidad haría que tu Health-Factor bajase de 1 → la tx fallará
+                    </p>
+                )}
             </div>
 
-            {/* botón submit */}
+            {/* botón */}
             <button
                 type="submit"
-                disabled={formLoading}
+                disabled={formLoading || futureHf < 1}
                 className="w-full flex justify-center items-center py-2 bg-primary
                    text-surface-light rounded-lg hover:bg-primary-light
                    transition disabled:opacity-50"
             >
                 {isProcessing ? (
                     <svg className="animate-spin h-5 w-5 text-surface-light" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                        />
+                        <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
                     </svg>
                 ) : (
                     `Pedir prestado ${symbol}`
