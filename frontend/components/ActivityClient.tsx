@@ -29,17 +29,12 @@ export default function ActivityClient() {
 
     const userAddress = address as `0x${string}`;
     const market = MARKETS[selected];
-
-    const {
-        data: historyData,
-        isLoading,
-        isError,
-        refetch,
-    } = useHistory(
+    const { data: historyData, isLoading, isFetching, isError, refetch, } = useHistory(
         POOL_ADDRESS,
         market.tokenAddress,
         userAddress,
-        market.decimals
+        market.decimals,
+        365
     );
     const history: Point[] = historyData ?? [];
 
@@ -104,14 +99,18 @@ export default function ActivityClient() {
 
                 <button
                     onClick={() => refetch()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                    disabled={isLoading || isFetching}
+                    className={`px-4 py-2 rounded-md text-white transition 
+    ${isLoading || isFetching
+                            ? 'bg-blue-300 cursor-not-allowed opacity-70'
+                            : 'bg-blue-600 hover:bg-blue-500'}`}
                 >
                     Actualizar
                 </button>
             </div>
 
             {/* Contenido */}
-            {isLoading ? (
+            {isLoading || isFetching ? (
                 <div className="flex flex-col items-center justify-center h-64">
                     {/* Spinner */}
                     <svg
