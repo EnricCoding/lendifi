@@ -1,16 +1,25 @@
 # LendiFi (Mini Aave)
 
-_A production‑grade, minimal DeFi lending & borrowing protocol inspired by Aave._
+A lean, Aave‑inspired DeFi lending & borrowing protocol with upgradable smart‑contracts and a modern React/Next.js frontend.
 
 ---
 
-## 🔥 Overview
+## 🔥 What Is LendiFi?
 
-LendiFi lets users deposit ERC‑20 tokens to earn interest, borrow against collateral, repay debt, and perform liquidations when positions become unhealthy—all through a polished Next.js dApp.
+LendiFi demonstrates the **core mechanics** of a money‑market protocol:
+
+| Action | What happens on‑chain |
+|--------|-----------------------|
+| **Deposit** | Supply an ERC‑20 token → the pool mints **aTokens** (1 aToken ≈ 1 underlying) that accrue interest. |
+| **Borrow**  | Use your deposit as collateral to borrow up to the _Loan‑to‑Value (LTV)_ ratio. |
+| **Repay**   | Pay back principal + interest to regain borrowing power. |
+| **Withdraw**| Burn aTokens to redeem the underlying collateral. |
+| **Liquidate** | If **Health Factor < 1** anyone can repay part of your debt and seize a bonus on your collateral. |
+
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ High‑Level Architecture
 
 ---
 
