@@ -34,12 +34,6 @@ export function Navbar() {
                     >
                         Activity
                     </Link>
-                    <Link
-                        href="/settings"
-                        className="text-md font-medium text-text-secondary dark:text-text-secondary-dark hover:text-primary-light"
-                    >
-                        Settings
-                    </Link>
                 </div>
                 <div>
                     <WalletButton />

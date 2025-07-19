@@ -1,6 +1,5 @@
 'use client';
 
-import { ChakraProvider, defaultSystem } from '@chakra-ui/react';
 import { WagmiProvider, createConfig } from 'wagmi';
 import { sepolia } from 'wagmi/chains';
 import { injected } from 'wagmi/connectors';
@@ -35,13 +34,11 @@ const wagmiConfig = createConfig({
 
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
-        <ChakraProvider value={defaultSystem}>
-            <WagmiProvider config={wagmiConfig}>
-                <QueryClientProvider client={queryClient}>
-                    {children}
-                    <Toaster position="top-right" richColors /> {/* auto dark/light */}
-                </QueryClientProvider>
-            </WagmiProvider>
-        </ChakraProvider>
+        <WagmiProvider config={wagmiConfig}>
+            <QueryClientProvider client={queryClient}>
+                {children}
+                <Toaster position="top-right" richColors /> 
+            </QueryClientProvider>
+        </WagmiProvider>
     );
 }

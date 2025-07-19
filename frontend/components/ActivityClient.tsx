@@ -23,31 +23,45 @@ export default function ActivityClient() {
     const [mounted, setMounted] = useState(false);
     const [selected, setSelected] = useState<keyof typeof MARKETS>('USDC');
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    /* ▼ selector de rango de días */
+    const ranges = [
+        { label: '7 d', value: 7 },
+        { label: '30 d', value: 30 },
+        { label: '90 d', value: 90 },
+        { label: '1 año', value: 365 },
+    ];
+    const [daysAgo, setDaysAgo] = useState<number>(365);
+    /* ▲ */
+
+    useEffect(() => setMounted(true), []);
 
     const userAddress = address as `0x${string}`;
     const market = MARKETS[selected];
-    const { data: historyData, isLoading, isFetching, isError, refetch, } = useHistory(
+    const tokenSymbol = market.symbol;               // ← símbolo (USDC, DAI…)
+
+    const {
+        data: historyData,
+        isLoading,
+        isFetching,
+        isError,
+        refetch,
+    } = useHistory(
         POOL_ADDRESS,
         market.tokenAddress,
         userAddress,
         market.decimals,
-        365
+        daysAgo
     );
     const history: Point[] = historyData ?? [];
 
-    // gráfico en orden natural (antiguo → reciente)
+    /* gráfico (antiguo → reciente, sólo fecha) */
     const chartData = useMemo(
         () =>
             history.map((p) => ({
-                time: new Date(p.ts).toLocaleString('es-ES', {
+                time: new Date(p.ts).toLocaleDateString('es-ES', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
                 }),
                 Colateral: p.collateral,
                 Deuda: p.debt,
@@ -55,31 +69,31 @@ export default function ActivityClient() {
         [history]
     );
 
-    // tabla en orden inverso (reciente → antiguo)
-    const tableData = useMemo(() => {
-        return [...history].sort((a, b) => b.ts - a.ts);
-    }, [history]);
+    /* tabla (reciente → antiguo) */
+    const tableData = useMemo(() => [...history].sort((a, b) => b.ts - a.ts), [
+        history,
+    ]);
 
-    if (!mounted) {
+    /* estados iniciales */
+    if (!mounted)
         return (
             <div className="p-6 flex items-center justify-center">
                 Cargando historial…
             </div>
         );
-    }
 
-    if (!isConnected) {
+    if (!isConnected)
         return (
             <div className="p-6 flex items-center justify-center">
                 <p>Conecta tu wallet para ver tu historial de actividad.</p>
             </div>
         );
-    }
 
     return (
         <div className="space-y-6 p-6">
-            {/* Selector de mercado & refrescar */}
+            {/* Selector de mercado, rango y refrescar */}
             <div className="flex flex-wrap gap-4 items-center">
+                {/* Mercado */}
                 <label className="flex items-center gap-2 text-black">
                     Mercado:
                     <select
@@ -97,22 +111,38 @@ export default function ActivityClient() {
                     </select>
                 </label>
 
+                {/* Rango */}
+                <label className="flex items-center gap-2 text-black">
+                    Rango:
+                    <select
+                        value={daysAgo}
+                        onChange={(e) => setDaysAgo(Number(e.target.value))}
+                        className="px-3 py-2 border rounded-md text-black"
+                    >
+                        {ranges.map((r) => (
+                            <option key={r.value} value={r.value}>
+                                {r.label}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
+                {/* Botón actualizar */}
                 <button
                     onClick={() => refetch()}
                     disabled={isLoading || isFetching}
-                    className={`px-4 py-2 rounded-md text-white transition 
-    ${isLoading || isFetching
-                            ? 'bg-blue-300 cursor-not-allowed opacity-70'
-                            : 'bg-blue-600 hover:bg-blue-500'}`}
+                    className={`px-4 py-2 rounded-md text-white transition ${isLoading || isFetching
+                        ? 'bg-blue-300 cursor-not-allowed opacity-70'
+                        : 'bg-blue-600 hover:bg-blue-500'
+                        }`}
                 >
-                    Actualizar
+                    {isLoading || isFetching ? 'Actualizando…' : 'Actualizar'}
                 </button>
             </div>
 
-            {/* Contenido */}
+            {/* Contenido principal */}
             {isLoading || isFetching ? (
                 <div className="flex flex-col items-center justify-center h-64">
-                    {/* Spinner */}
                     <svg
                         className="animate-spin h-8 w-8 text-primary mb-4"
                         xmlns="http://www.w3.org/2000/svg"
@@ -146,7 +176,9 @@ export default function ActivityClient() {
                     </button>
                 </div>
             ) : history.length === 0 ? (
-                <p className='mt-2 text-black'>No hay movimientos en el rango seleccionado.</p>
+                <p className="mt-2 text-black">
+                    No hay movimientos en el rango seleccionado.
+                </p>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Gráfico */}
@@ -154,22 +186,44 @@ export default function ActivityClient() {
                         <ResponsiveContainer width="100%" height={300}>
                             <LineChart
                                 data={chartData}
-                                margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
+                                margin={{ top: 5, right: 20, bottom: 5, left: 20 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="time" />
-                                <YAxis />
-                                <RechartsTooltip />
+
+                                <XAxis
+                                    dataKey="time"
+                                    tickFormatter={(v) => v}
+                                    interval="preserveStartEnd"
+                                />
+
+                                <YAxis
+                                    label={{
+                                        value: tokenSymbol,
+                                        angle: -90,
+                                        position: 'outsideLeft',
+                                        dy: 10,
+                                        style: { fill: '#1F2937', fontSize: 12, fontWeight: 600 },
+                                    }}
+                                />
+
+                                <RechartsTooltip
+                                    labelFormatter={(l) => `Fecha: ${l}`}
+                                    formatter={(v: number) => `${v.toFixed(2)} ${tokenSymbol}`}
+                                />
+
                                 <Legend />
+
                                 <Line
                                     type="monotone"
                                     dataKey="Colateral"
+                                    name={`Colateral (${tokenSymbol})`}
                                     stroke="#3182ce"
                                     dot={false}
                                 />
                                 <Line
                                     type="monotone"
                                     dataKey="Deuda"
+                                    name={`Deuda (${tokenSymbol})`}
                                     stroke="#e53e3e"
                                     dot={false}
                                 />
