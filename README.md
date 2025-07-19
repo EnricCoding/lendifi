@@ -12,24 +12,6 @@ LendiFi lets users deposit ERC‑20 tokens to earn interest, borrow against coll
 
 ## 🏗️ Architecture
 
-```mermaid
-flowchart TD
-  subgraph On‑chain
-    Proxy[LendiFiProxy (UUPS)] -->|delegatecall| Impl[LendingPool v1]
-    Impl --> ORA[PriceOracle]
-    Impl --> IRM[InterestRateModel]
-    Impl --> aTK[aToken (ERC‑20)]
-    Impl --> dTK[DebtToken (ERC‑20)]
-  end
-  subgraph Off‑chain
-    FE[Next.js dApp]
-    Scripts[Hardhat Scripts]
-    CI[GitHub Actions]
-  end
-  FE -->|JSON‑RPC| Proxy
-  Scripts -->|Deploy & Verify| Proxy
-```
-
 ---
 
 ## 🛠️ Tech Stack
