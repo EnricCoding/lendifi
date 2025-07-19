@@ -172,16 +172,17 @@ Finally, push `frontend/` to Vercel and add environment variables.
 
 ---
 
-## 📈 Key Metrics
+## 📈 Protocol Metrics
 
-| Metric        | Formula                              |
-| ------------- | ------------------------------------ |
-| Utilisation   | `debt / collateral`                  |
-| Borrow APR    | `InterestRateModel.borrowRate(util)` |
-| Deposit APY   | `BorrowAPR × utilisation`            |
-| Health Factor | `(Collateral × Price × LTV) / Debt`  |
+| Metric | What it measures | Formula / Units |
+|--------|------------------|-----------------|
+| **Utilisation** (`u`) | Share of supplied liquidity currently borrowed. 0 % = idle, 100 % = fully lent. | `u = totalDebt ÷ totalCollateral` |
+| **Borrow APR** | Annual percentage rate paid by borrowers (simple interest, not compounded). Calculated block‑by‑block via the Interest‑Rate Model. | `APR = InterestRateModel.borrowRate(u)` |
+| **Deposit APY** | Effective annual yield earned by suppliers (compound interest assumption). | `APY ≈ Borrow APR × u` |
+| **Health Factor** (`HF`) | Safety buffer of a user’s position; liquidation when `HF < 1`. | `HF = (Collateral × Price × LTV) ÷ Debt` |
 
----
+> **Rule of thumb**  
+> • `HF > 2` = very safe • `1 < HF ≤ 2` = monitor position • `HF ≤ 1` = liquidation possible
 
 ## 🤝 Contributing
 
