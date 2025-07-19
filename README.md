@@ -16,24 +16,31 @@ LendiFi demonstrates the **core mechanics** of a money‑market protocol:
 | **Withdraw**| Burn aTokens to redeem the underlying collateral. |
 | **Liquidate** | If **Health Factor < 1** anyone can repay part of your debt and seize a bonus on your collateral. |
 
-
 ---
 
 ## 🏗️ High‑Level Architecture
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Core Tech Stack
 
-| Layer               | Tooling                                                   | Version |
-| ------------------- | --------------------------------------------------------- | ------- |
-| **Smart Contracts** | Solidity 0.8.28, OZ 5.3, Hardhat 2.24                     |         |
-| **Frontend**        | Next.js 14, React 18, TypeScript 5                        |         |
-|                     | wagmi 2 + viem 2, Chakra UI 3, TailwindCSS 3              |         |
-| **Testing**         | Hardhat (Mocha/Chai), solidity‑coverage, slither, Jest 30 |         |
-| **CI/CD**           | GitHub Actions, Vercel, Etherscan verify                  |         |
-
----
+| Layer | Key Tools & Libraries | Version |
+|-------|----------------------|---------|
+| **Smart‑Contracts** | Solidity | **0.8.28** |
+|  | Hardhat | **2.24.3** |
+|  | OpenZeppelin Contracts | **5.3.0** |
+|  | Ethers (JS SDK for scripts) | **5.8.0** |
+| **Frontend** | Next.js | **14.1.0** |
+|  | React | **18.x** |
+|  | TypeScript | **5.x** |
+|  | TailwindCSS | **3.3.0** |
+|  | wagmi (React Web3 hooks) | **2.15.6** |
+|  | viem (low‑level RPC) | **2.31.4** |
+|  | Ethers (JS SDK for dApp) | **6.14.4** |
+| **State / Data** | TanStack React‑Query | **5.81.2** |
+| **Testing** | Hardhat (Mocha/Chai) | built‑in |
+|  | Jest + React Testing Library | **30.0.2 / 16.3.0** |
+| **CI / Deployment** | GitHub Actions · Vercel | — |
 
 ## 📂 Repo Structure
 
