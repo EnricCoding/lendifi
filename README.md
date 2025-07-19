@@ -57,24 +57,94 @@ mini-aave/
 
 ---
 
-## ⚙️ Setup
+# ⚙️ Quick Start — Local Dev in 5 Steps
+
+> **Requirements**  
+> • Node 18 + (LTS) • Git • MetaMask (or any EVM wallet)
+
+---
+
+## 1 Clone + Install
 
 ```bash
 git clone https://github.com/EnricCoding/lendifi.git
-cd LendiGi
+cd lendifi
+
+# Root deps – Hardhat, tests, scripts
 npm install
+
+# Frontend deps
 cd frontend && npm install
+cd ..        # back to repo root
 ```
 
-Create `.env` and `frontend/.env.local` from the provided examples, then:
+---
+
+## 2 Create `.env` files
 
 ```bash
-# Compile & deploy to local Hardhat
-npx hardhat node
-npx hardhat run scripts/deploy.ts --network localhost
+cp .env.example              .env
+cp frontend/.env.example     frontend/.env.local
+```
 
-# Run dApp
-cd frontend && npm run dev
+| Key | Where | Purpose |
+| --- | ----- | ------- |
+| `PRIVATE_KEY` | `.env` | Throw‑away key you control (**never commit real keys**) |
+| `SEPOLIA_RPC` | `.env` | Alchemy / Infura HTTPS endpoint |
+| `NEXT_PUBLIC_SEPOLIA_RPC` | `frontend/.env.local` | Same RPC for the dApp |
+| `NEXT_PUBLIC_*_ADDRESS` | `frontend/.env.local` | **Leave blank** until Step 4 prints them |
+
+---
+
+## 3 Start Hardhat node *(Terminal #1)*
+
+```bash
+npx hardhat node            # localhost:8545  • chainId 31337
+```
+
+Hardhat prints 20 pre‑funded accounts (10 ETH each). Copy the **first private key** for MetaMask.
+
+---
+
+## 4 Deploy contracts *(Terminal #2)*
+
+```bash
+npx hardhat run scripts/deploy.ts --network localhost
+```
+
+Paste printed addresses into `frontend/.env.local`:
+
+```dotenv
+NEXT_PUBLIC_LENDING_POOL_ADDRESS=0x...
+NEXT_PUBLIC_ORACLE_ADDRESS=0x...
+NEXT_PUBLIC_RATE_MODEL_ADDRESS=0x...
+```
+
+---
+
+## 5 Launch the dApp *(Terminal #3)*
+
+```bash
+cd frontend
+npm run dev                 # http://localhost:3000
+```
+
+1. MetaMask → Network → **Localhost 8545**  
+2. Import the private key from Step 3 (Account #0)  
+3. Enjoy: Deposit → Borrow → Repay → Withdraw → Liquidate 🎉
+
+---
+
+### Deploying to Sepolia (optional)
+
+```bash
+# Fund wallet (free test ETH)
+open https://faucet.circle.com/
+
+# Deploy
+npx hardhat run scripts/deploy.ts --network sepolia
+
+# Update addresses in frontend/.env.local and redeploy the frontend (e.g. Vercel)
 ```
 
 ---
