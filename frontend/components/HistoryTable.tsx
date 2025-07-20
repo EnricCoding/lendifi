@@ -33,10 +33,10 @@ export function HistoryTable({ data }: HistoryTableProps) {
                 <table className="w-full table-auto bg-white rounded-lg shadow">
                     <thead>
                         <tr className="bg-gray-100">
-                            <th className="px-4 py-2 text-left text-text-primary">Fecha</th>
-                            <th className="px-4 py-2 text-left text-text-primary">Evento</th>
-                            <th className="px-4 py-2 text-right text-text-primary">Colateral</th>
-                            <th className="px-4 py-2 text-right text-text-primary">Deuda</th>
+                            <th className="px-4 py-2 text-left text-text-primary">Date</th>
+                            <th className="px-4 py-2 text-left text-text-primary">Event</th>
+                            <th className="px-4 py-2 text-right text-text-primary">Collateral</th>
+                            <th className="px-4 py-2 text-right text-text-primary">Debt</th>
                         </tr>
                     </thead>
                     <tbody>

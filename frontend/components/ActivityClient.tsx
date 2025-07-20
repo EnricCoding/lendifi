@@ -31,6 +31,7 @@ export default function ActivityClient() {
         { label: '1 year', value: 365 },
     ];
     const [daysAgo, setDaysAgo] = useState<number>(365);
+    /* ▲ */
 
     useEffect(() => setMounted(true), []);
 
@@ -51,25 +52,34 @@ export default function ActivityClient() {
         market.decimals,
         daysAgo
     );
+
     const history: Point[] = historyData ?? [];
 
+    /* ───── chart data (oldest → newest, keep 0‑debt start) ───── */
     const chartData = useMemo(
         () =>
-            history.map((p) => ({
-                time: new Date(p.ts).toLocaleDateString('en-US', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                }),
-                Collateral: p.collateral,
-                Debt: p.debt,
-            })),
+            [...history]
+                .sort((a, b) => a.ts - b.ts) // chronological
+                .map((p) => ({
+                    time: new Date(p.ts).toLocaleString('en-GB', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }),
+                    Collateral: p.collateral,
+                    Debt: p.debt,
+                })),
         [history]
     );
 
-    const tableData = useMemo(() => [...history].sort((a, b) => b.ts - a.ts), [
-        history,
-    ]);
+    /* table (newest → oldest) */
+    const tableData = useMemo(
+        () => [...history].sort((a, b) => b.ts - a.ts),
+        [history]
+    );
+
+    /* ─────────────────────────────────────────────────────────── */
 
     if (!mounted)
         return (
@@ -89,7 +99,9 @@ export default function ActivityClient() {
 
     return (
         <div className="space-y-6 p-6">
+            {/* Controls */}
             <div className="flex flex-wrap gap-4 items-center">
+                {/* market */}
                 <label className="flex items-center gap-2 text-black">
                     Market:
                     <select
@@ -107,6 +119,7 @@ export default function ActivityClient() {
                     </select>
                 </label>
 
+                {/* range */}
                 <label className="flex items-center gap-2 text-black">
                     Range:
                     <select
@@ -122,6 +135,7 @@ export default function ActivityClient() {
                     </select>
                 </label>
 
+                {/* refresh */}
                 <button
                     onClick={() => refetch()}
                     disabled={isLoading || isFetching}
@@ -134,6 +148,7 @@ export default function ActivityClient() {
                 </button>
             </div>
 
+            {/* Content */}
             {isLoading || isFetching ? (
                 <div className="flex flex-col items-center justify-center h-64">
                     <svg
@@ -169,23 +184,22 @@ export default function ActivityClient() {
                     </button>
                 </div>
             ) : history.length === 0 ? (
-                <p className="mt-2 text-black">
-                    No activity in the selected range.
-                </p>
+                <p className="mt-2 text-black">No activity in the selected range.</p>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Chart */}
                     <div className="p-4 bg-gray-50 rounded-lg shadow">
                         <ResponsiveContainer width="100%" height={300}>
                             <LineChart
                                 data={chartData}
-                                margin={{ top: 5, right: 20, bottom: 5, left: 20 }}
+                                margin={{ top: 5, right: 10, bottom: 5, left: 10 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" />
 
                                 <XAxis
                                     dataKey="time"
-                                    tickFormatter={(v) => v}
                                     interval="preserveStartEnd"
+                                    tickFormatter={(v) => v}
                                 />
 
                                 <YAxis
@@ -193,12 +207,9 @@ export default function ActivityClient() {
                                         value: tokenSymbol,
                                         angle: -90,
                                         position: 'outsideLeft',
-                                        dy: 10,
-                                        style: {
-                                            fill: '#1F2937',
-                                            fontSize: 12,
-                                            fontWeight: 600,
-                                        },
+                                        dy: 0,
+                                        dx: -10,
+                                        style: { fill: '#1F2937', fontSize: 16, fontWeight: 600 },
                                     }}
                                 />
 
@@ -210,14 +221,14 @@ export default function ActivityClient() {
                                 <Legend />
 
                                 <Line
-                                    type="monotone"
+                                    type="stepAfter"               
                                     dataKey="Collateral"
                                     name={`Collateral (${tokenSymbol})`}
                                     stroke="#3182ce"
                                     dot={false}
                                 />
                                 <Line
-                                    type="monotone"
+                                    type="stepAfter"
                                     dataKey="Debt"
                                     name={`Debt (${tokenSymbol})`}
                                     stroke="#e53e3e"
@@ -227,6 +238,7 @@ export default function ActivityClient() {
                         </ResponsiveContainer>
                     </div>
 
+                    {/* Table */}
                     <HistoryTable data={tableData} />
                 </div>
             )}

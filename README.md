@@ -42,6 +42,15 @@ it with testnet tokens.
 
 ---
 
+## 🎬 Demo
+
+Here are a couple of screenshots showing the Markets Dashboard—where you can deposit, borrow, repay, withdraw, and liquidate—and the Activity History view:
+
+<div align="center">
+  <img src="docs/screenshots/lendifi-activity-screenshot.png" alt="Dashboard view" width="45%" />
+  <img src="docs/screenshots/markets-usdc-screenshot.png" alt="Activity history view" width="45%" />
+</div>
+
 ## 🏗️ High‑Level Architecture
 
 LendiFi follows a classic money‑market layout: a set of upgrade‑safe smart‑contracts on Sepolia plus a React / Next.js frontend that talks to them via wagmi + viem.
