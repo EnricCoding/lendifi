@@ -34,12 +34,6 @@ export function useHistory(
     staleTime: 60_000,
     refetchInterval: 60_000,
     queryFn: async (): Promise<Point[]> => {
-      console.log("[useHistory] ▶️ start", {
-        poolAddress,
-        tokenAddress,
-        user,
-        daysAgo,
-      });
 
       const eth = (window as any).ethereum;
       if (!eth) throw new Error("No Ethereum provider");
@@ -52,7 +46,6 @@ export function useHistory(
 
       const latest = await provider.getBlockNumber();
       const fromBlock = Math.max(0, latest - blockRange);
-      console.log("[useHistory] ⛏ blocks", { fromBlock, latest, blockRange });
 
       const depTopics = (pool.filters.Deposit(tokenAddress, user) as any)
         .topics;
@@ -72,7 +65,6 @@ export function useHistory(
           fromBlock: start,
           toBlock: end,
         };
-        console.log(`↕️ getLogs [${start}..${end}] topics=`, topics);
         try {
           return await provider.getLogs(filter);
         } catch (err: any) {
@@ -83,12 +75,11 @@ export function useHistory(
             const right = await fetchLogsRec(topics, mid + 1, end);
             return [...left, ...right];
           }
-          console.error("[useHistory] ❌ getLogs error", err);
+          console.error("[useHistory] getLogs error", err);
           throw err;
         }
       }
 
-      // 4) fetch todos los logs
       const [dLogs, wLogs, bLogs, rLogs] = await Promise.all([
         fetchLogsRec(depTopics, fromBlock, latest),
         fetchLogsRec(witTopics, fromBlock, latest),
@@ -96,14 +87,12 @@ export function useHistory(
         fetchLogsRec(repTopics, fromBlock, latest),
       ]);
 
-      // 5) merge y ordenar por bloque + txIndex
       const allLogs = [...dLogs, ...wLogs, ...bLogs, ...rLogs].sort((a, b) => {
         if (a.blockNumber !== b.blockNumber)
           return a.blockNumber - b.blockNumber;
         return (a.transactionIndex ?? 0) - (b.transactionIndex ?? 0);
       });
 
-      // 6) reconstruir puntos *únicos* detectando cambios
       const points: Point[] = [];
       let prevColl = 0;
       let prevDebt = 0;
@@ -122,12 +111,10 @@ export function useHistory(
         const coll = Number(rawColl) / factor;
         const debt = Number(rawDebt) / factor;
 
-        // 6a) skip si no hay cambio
         if (coll === prevColl && debt === prevDebt) {
           continue;
         }
 
-        // 6b) determinar tipo de evento
         let event: EventType;
         if (coll > prevColl) event = "Deposit";
         else if (coll < prevColl) event = "Withdraw";
@@ -140,14 +127,12 @@ export function useHistory(
           debt,
           event,
         };
-        console.log("[useHistory]   ▶️ point", point);
 
         points.push(point);
         prevColl = coll;
         prevDebt = debt;
       }
 
-      console.log("[useHistory] ✅ done, points:", points);
       return points;
     },
   });

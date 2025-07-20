@@ -4,11 +4,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePoolData } from '@/hooks';
-import { useDepositApy } from '@/hooks/useDepositApy';          // ➜ nuevo
+import { useDepositApy } from '@/hooks/useDepositApy';
 import { MARKETS } from '@/config/markets';
 
 /* ───────── helpers ───────── */
-const fmt = (n: number, digits = 2, locale = 'es-ES') =>
+const fmt = (n: number, digits = 2, locale = 'en-US') =>
     new Intl.NumberFormat(locale, {
         minimumFractionDigits: digits,
         maximumFractionDigits: digits,
@@ -49,7 +49,7 @@ export function MarketCard({
         error: apyErr,
     } = useDepositApy(RATE_MODEL, totalCollateral, totalDebt);
 
-    /* métricas derivadas -------------------------------------------------- */
+    /* derived metrics ----------------------------------------------------- */
     const decimals = MARKETS[symbol].decimals;
     const tvl = Number(totalCollateral) / 10 ** decimals;
     const utilization =
@@ -67,7 +67,7 @@ export function MarketCard({
                 {symbol}
             </h3>
 
-            {/* Loader global */}
+            {/* Global loader */}
             {(!mounted || loading) && (
                 <div className="flex justify-center py-5">
                     <svg className="animate-spin h-6 w-6 text-secondary dark:text-secondary-dark" viewBox="0 0 24 24">
@@ -77,28 +77,28 @@ export function MarketCard({
                 </div>
             )}
 
-            {/* Error de pool */}
+            {/* Pool error */}
             {mounted && !loading && error && (
-                <p className="text-danger text-sm">No se pudo obtener los datos del mercado.</p>
+                <p className="text-danger text-sm">Could not fetch market data.</p>
             )}
 
-            {/* Datos */}
+            {/* Data */}
             {mounted && !loading && !error && (
                 <div className="space-y-4">
-                    {/* Precio */}
+                    {/* Price */}
                     <div>
                         <span className="block text-sm text-text-secondary dark:text-text-secondary-dark">
-                            Precio de mercado
+                            Market price
                         </span>
                         <span className="font-medium text-primary">
                             ${fmt(price, 4)} USD
                         </span>
                     </div>
 
-                    {/* Utilización */}
+                    {/* Utilization */}
                     <div>
                         <span className="block text-sm text-text-secondary dark:text-text-secondary-dark items-center gap-1">
-                            Pool prestado (Porcentaje del total depositado que está actualmente prestado)
+                            Borrowed pool (percentage of total deposits currently borrowed)
                         </span>
                         <span className="font-medium text-primary">
                             {fmt(utilization, 1)} %
@@ -108,17 +108,17 @@ export function MarketCard({
                     {/* TVL */}
                     <div>
                         <span className="block text-sm text-text-secondary dark:text-text-secondary-dark">
-                            TVL (Total Locked)
+                            TVL (Total Value Locked)
                         </span>
                         <span className="font-medium text-primary">
                             {fmt(tvl)} {symbol}
                         </span>
                     </div>
 
-                    {/* APY estimada */}
+                    {/* Estimated APY */}
                     <div>
                         <span className="block text-sm text-text-secondary dark:text-text-secondary-dark">
-                            Rentabilidad estimada
+                            Estimated yield
                         </span>
                         {apyErr ? (
                             <span className="text-danger text-sm">–</span>
@@ -129,13 +129,13 @@ export function MarketCard({
                         )}
                     </div>
 
-                    {/* CTA opcional */}
+                    {/* Optional CTA */}
                     {showButton && (
                         <Link
                             href={`/markets/${symbol}`}
                             className="block w-full mt-2 text-center rounded-lg py-2 bg-primary text-surface-light hover:bg-primary-light transition"
                         >
-                            Gestionar mercado {symbol}
+                            Manage {symbol} market
                         </Link>
                     )}
                 </div>

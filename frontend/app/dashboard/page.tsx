@@ -15,12 +15,14 @@ export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-bg-light dark:bg-bg-dark px-4 py-6">
             <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark mb-4">
-                Markets Dashboard
+                Markets Dashboard
             </h1>
             <p className="text-text-secondary dark:text-text-secondary-dark mb-6">
-                View your collateral, debt, and health factor in real time for each market.
+                These are the tokens currently available on LendiFi.
             </p>
-
+            <p className="text-text-secondary dark:text-text-secondary-dark mb-6">
+                Monitor your collateral, outstanding debt and health factor for every market—all updated in real time.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {MARKETS.map(({ symbol, tokenAddress }) => (
                     <TokenCard

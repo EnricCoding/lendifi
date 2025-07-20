@@ -60,21 +60,18 @@ contract InterestRateModel is Ownable {
         }
     }
 
-    /**
-     * @notice Deposit rate = borrowRate × utilisation × (1 − reserveFactor).
-     * @param utilizationWad totalDebt / totalCollateral (WAD)
-     * @param reserveFactorWad share of interest kept by the protocol (WAD)
-     */
+  
     function getDepositRate(
         uint256 utilizationWad,
         uint256 reserveFactorWad
     ) external view returns (uint256) {
-        uint256 borrowRate = getBorrowRate(utilizationWad);
-        uint256 oneMinusRF = WadRayMath.WAD - reserveFactorWad;
-        return
-            borrowRate.rayMul(utilizationWad).rayMul(
-                (oneMinusRF * WadRayMath.RAY) / WadRayMath.WAD
-            );
+        uint256 borrowRate = getBorrowRate(utilizationWad); // RAY/sec
+
+        uint256 utilRay = (utilizationWad * WadRayMath.RAY) / WadRayMath.WAD;
+        uint256 rfRay = ((WadRayMath.WAD - reserveFactorWad) * WadRayMath.RAY) /
+            WadRayMath.WAD;
+
+        return borrowRate.rayMul(utilRay).rayMul(rfRay);
     }
 
     /// @notice Owner can update curve parameters.

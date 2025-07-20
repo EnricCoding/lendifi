@@ -80,72 +80,77 @@ cd ..        # back to repo root
 
 ---
 
-## 2 Create `.env` files
+## 2 Create `.env` files
 
 ```bash
 cp .env.example              .env
 cp frontend/.env.example     frontend/.env.local
 ```
 
-| Key | Where | Purpose |
-| --- | ----- | ------- |
-| `PRIVATE_KEY` | `.env` | Throw‑away key you control (**never commit real keys**) |
-| `SEPOLIA_RPC` | `.env` | Alchemy / Infura HTTPS endpoint |
+| Key | File | Purpose |
+| --- | ---- | ------- |
+| `PRIVATE_KEY` | `.env` | Your wallet private key. Throw‑away account you control (**never commit real keys**) |
+| `SEPOLIA_RPC` | `.env` | Create account in Alchemy/Infura and get the HTTPS endpoints |
 | `NEXT_PUBLIC_SEPOLIA_RPC` | `frontend/.env.local` | Same RPC for the dApp |
-| `NEXT_PUBLIC_*_ADDRESS` | `frontend/.env.local` | **Leave blank** until Step 4 prints them |
+| `NEXT_PUBLIC_*_ADDRESS` | `frontend/.env.local` | **Leave blank** – will be filled after deploy |
+
+> **Tip:** Get free Sepolia ETH at <https://faucet.circle.com/>.
 
 ---
 
-## 3 Start Hardhat node *(Terminal #1)*
+## 3 Compile & Deploy to Sepolia
 
 ```bash
-npx hardhat node            # localhost:8545  • chainId 31337
+# compile (re‑generates ABIs)
+npx hardhat compile
+
+# deploy
+npx hardhat run scripts/deploy.ts --network sepolia
 ```
 
-Hardhat prints 20 pre‑funded accounts (10 ETH each). Copy the **first private key** for MetaMask.
+Sample output:
 
----
-
-## 4 Deploy contracts *(Terminal #2)*
-
-```bash
-npx hardhat run scripts/deploy.ts --network localhost
+```
+Deploying with: 0xYourDeployer…
+AToken             → 0x4A345C803817D2a195854b0F1198d716FF050C6C
+PriceOracle        → 0x9ed1D24E4CcCd4D65026f0DE7223907A3f227553
+InterestRateModel  → 0x2de9e3f37fB210ECa960DBaB2C4270A44D29e646
+LendingPool        → 0x3B9DcEfE78447A945F12b727373a80FeA3f212e3
+Ownership of aToken transferred to LendingPool
 ```
 
-Paste printed addresses into `frontend/.env.local`:
+Copy **only** these addresses into `frontend/.env.local`:
 
 ```dotenv
-NEXT_PUBLIC_LENDING_POOL_ADDRESS=0x...
-NEXT_PUBLIC_ORACLE_ADDRESS=0x...
-NEXT_PUBLIC_RATE_MODEL_ADDRESS=0x...
+NEXT_PUBLIC_LENDING_POOL_ADDRESS=0x3B9DcEfE78447A945F12b727373a80FeA3f212e3
+NEXT_PUBLIC_RATE_MODEL_ADDRESS=0x2de9e3f37fB210ECa960DBaB2C4270A44D29e646
+NEXT_PUBLIC_ORACLE_ADDRESS=0x9ed1D24E4CcCd4D65026f0DE7223907A3f227553
 ```
 
 ---
 
-## 5 Launch the dApp *(Terminal #3)*
+## 4 Launch the Frontend
 
 ```bash
 cd frontend
-npm run dev                 # http://localhost:3000
+npm run dev       # ⇢ http://localhost:3000
 ```
 
-1. MetaMask → Network → **Localhost 8545**  
-2. Import the private key from Step 3 (Account #0)  
-3. Enjoy: Deposit → Borrow → Repay → Withdraw → Liquidate 🎉
+Open the site, connect MetaMask (Sepolia network) with **the same deployer account** or any funded test wallet.
+
+You’re ready – Deposit → Borrow → Repay → Withdraw → Liquidate 🎉
 
 ---
 
-### Deploying to Sepolia (optional)
+## Keeping ABIs in Sync
+
+Whenever you change Solidity:
 
 ```bash
-# Fund wallet (free test ETH)
-open https://faucet.circle.com/
-
-# Deploy
-npx hardhat run scripts/deploy.ts --network sepolia
-
-# Update addresses in frontend/.env.local and redeploy the frontend (e.g. Vercel)
+npx hardhat compile
 ```
+
+The freshly generated ABIs land in `artifacts/` and are automatically used by `scripts/deploy.ts`. After redeploying, update the three `NEXT_PUBLIC_*_ADDRESS` values in `frontend/.env.local`, rebuild (Vercel) or restart `npm run dev`, and you’re good to go.
 
 ---
 
@@ -168,21 +173,34 @@ cd frontend && npm test
 npx hardhat run scripts/deploy.ts --network sepolia
 ```
 
-Finally, push `frontend/` to Vercel and add environment variables.
+(Optional) If do you want to deploy the project finally, push `frontend/` to Vercel and add environment variables. 
 
 ---
 
-## 📈 Protocol Metrics
+# 📈 Protocol Metrics — Quick Reference
 
-| Metric | What it measures | Formula / Units |
+| Metric | What it measures | Formula / Units |
 |--------|------------------|-----------------|
-| **Utilisation** (`u`) | Share of supplied liquidity currently borrowed. 0 % = idle, 100 % = fully lent. | `u = totalDebt ÷ totalCollateral` |
-| **Borrow APR** | Annual percentage rate paid by borrowers (simple interest, not compounded). Calculated block‑by‑block via the Interest‑Rate Model. | `APR = InterestRateModel.borrowRate(u)` |
-| **Deposit APY** | Effective annual yield earned by suppliers (compound interest assumption). | `APY ≈ Borrow APR × u` |
-| **Health Factor** (`HF`) | Safety buffer of a user’s position; liquidation when `HF < 1`. | `HF = (Collateral × Price × LTV) ÷ Debt` |
+| **Utilisation** (`u`) | Share of supplied liquidity currently borrowed.<br>0 % = idle, 100 % = fully lent. | `u = totalDebt ÷ totalCollateral` |
+| **Borrow APR** | Annual percentage rate paid by borrowers (simple, non‑compounded). | `APR = InterestRateModel.borrowRate(u)` |
+| **Deposit APY** | Effective annual yield earned by suppliers (compounded). | `APY ≈ Borrow APR × u` |
+| **Health Factor** (`HF`) | Safety buffer of a user’s position; liquidation when `HF < 1`. | `HF = (Collateral × Price × LTV) ÷ Debt` |
 
 > **Rule of thumb**  
-> • `HF > 2` = very safe • `1 < HF ≤ 2` = monitor position • `HF ≤ 1` = liquidation possible
+> • `HF > 2` = very safe • `1 < HF ≤ 2` = monitor position • `HF ≤ 1` = at risk of liquidation
+
+---
+
+## 🔍 Glossary
+
+| Term | Description |
+|------|-------------|
+| **LTV** | *Loan‑to‑Value*. Max % of collateral value that can be borrowed (e.g. 80 %). |
+| **WAD / RAY** | Fixed‑point math units: WAD = 10¹⁸, RAY = 10²⁷. |
+| **Reserve Factor** | Share of interest routed to the protocol treasury. |
+| **Liquidation Bonus** | Extra collateral a liquidator receives as incentive (e.g. 5 %). |
+
+---
 
 ## 🤝 Contributing
 
