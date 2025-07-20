@@ -16,6 +16,9 @@ LendiFi demonstrates the **core mechanics** of a money‑market protocol:
 | **Withdraw**| Burn aTokens to redeem the underlying collateral. |
 | **Liquidate** | If **Health Factor < 1** anyone can repay part of your debt and seize a bonus on your collateral. |
 
+
+![LendiFi architecture diagram](docs/diagram-lendifi.png)
+
 ---
 
 ## 🏗️ High‑Level Architecture
@@ -45,7 +48,7 @@ LendiFi demonstrates the **core mechanics** of a money‑market protocol:
 ## 📂 Repo Structure
 
 ```
-mini-aave/
+lendifi/
 ├─ contracts/             # Solidity
 ├─ scripts/               # Deploy helpers
 ├─ test/                  # Contract tests
