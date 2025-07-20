@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import { usePoolData, useUserPosition } from '@/hooks';
-import { Tooltip } from './ui/Tooltip';
 
 interface TokenCardProps {
   symbol: string;

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Spinner } from '@chakra-ui/react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 
 export function WalletButton() {
@@ -10,13 +9,9 @@ export function WalletButton() {
     const { disconnect } = useDisconnect();
     const isConnecting = status === 'pending';
 
-    // Sólo true tras el primer render en cliente
     const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    useEffect(() => setMounted(true), []);
 
-    // Mientras no estemos montados, siempre renderizamos "Connect Wallet"
     if (!mounted) {
         return (
             <button
@@ -28,7 +23,6 @@ export function WalletButton() {
         );
     }
 
-    // Ya sí estamos montados: mostramos UI real
     if (isConnected) {
         const shortAddress = `${address?.slice(0, 6)}…${address?.slice(-4)}`;
         return (
@@ -42,7 +36,6 @@ export function WalletButton() {
         );
     }
 
-    // Estado de “connecting”
     return (
         <button
             onClick={() => {
@@ -55,7 +48,27 @@ export function WalletButton() {
                     : 'bg-blue-600 hover:bg-blue-700'
                 } flex items-center space-x-2`}
         >
-            {isConnecting && <Spinner size="xs" color="white" />}
+            {isConnecting && (
+                <svg
+                    className="animate-spin h-4 w-4 text-white"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                >
+                    <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                    />
+                    <path
+                        className="opacity-75"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        fill="currentColor"
+                    />
+                </svg>
+            )}
             <span>{isConnecting ? 'Connecting…' : 'Connect Wallet'}</span>
         </button>
     );

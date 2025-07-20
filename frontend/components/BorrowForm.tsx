@@ -1,4 +1,3 @@
-// frontend/components/BorrowForm.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,11 +9,10 @@ import { useBorrow } from '@/hooks/useBorrow';
 import { MARKETS } from '@/config/markets';
 import { toast } from 'sonner';
 
-/* ───────── esquema ───────── */
 const borrowSchema = z.object({
     amount: z
-        .number({ invalid_type_error: 'La cantidad debe ser un número' })
-        .min(0.0001, { message: 'Introduce al menos 0.0001' }),
+        .number({ invalid_type_error: 'Amount must be a number' })
+        .min(0.0001, { message: 'Enter at least 0.0001' }),
 });
 type BorrowFormValues = z.infer<typeof borrowSchema>;
 type MarketKey = keyof typeof MARKETS;
@@ -30,15 +28,13 @@ export function BorrowForm({
     tokenAddress,
     poolAddress,
 }: BorrowFormProps) {
-    /* mount */
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
 
-    /* posición on-chain */
     const {
         deposited,
         borrowed,
-        healthFactor,          // ⬅︎ ahora lo tenemos
+        healthFactor,
         loading: posLoading,
     } = useUserPosition(
         poolAddress,
@@ -46,7 +42,6 @@ export function BorrowForm({
         process.env.NEXT_PUBLIC_ORACLE_ADDRESS!,
     );
 
-    /* config mercado */
     const m = MARKETS[symbol];
     const factor = 10 ** m.decimals;
     const maxBorrowable =
@@ -55,7 +50,6 @@ export function BorrowForm({
             Number(borrowed) / factor
             : 0;
 
-    /* react-hook-form */
     const {
         register,
         handleSubmit,
@@ -71,7 +65,6 @@ export function BorrowForm({
         typeof rawInput === 'number' && !isNaN(rawInput) ? rawInput : 0;
     const amountWei = BigInt(Math.floor(amountValue * factor));
 
-    /* calcular HF hipotético */
     const ltv = m.ltvRatio / 100; // 0.8
     const depositedTok = Number(deposited) / factor;
     const borrowedTok = Number(borrowed) / factor;
@@ -80,27 +73,24 @@ export function BorrowForm({
             ? Infinity
             : depositedTok / (ltv * (borrowedTok + amountValue));
 
-    /* hook borrow */
     const { borrow, isProcessing, isSuccess, error } = useBorrow(tokenAddress);
 
-    /* toast side-effects */
     useEffect(() => {
         if (isSuccess) {
-            toast.success('Préstamo confirmado');
+            toast.success('Borrow confirmed');
             reset({ amount: 0 });
         }
-        if (error) toast.error('La transacción falló');
+        if (error) toast.error('Transaction failed');
     }, [isSuccess, error, reset]);
 
-    /* submit */
     const onSubmit = handleSubmit(() => {
         if (
             amountValue <= 0 ||
             amountValue > maxBorrowable ||
-            futureHf < 1 // bloquear si caería por debajo de 1
+            futureHf < 1 
         )
             return;
-        toast('Enviando transacción…', { duration: 3000 });
+        toast('Sending transaction…', { duration: 3000 });
         borrow(amountWei);
     });
 
@@ -108,7 +98,6 @@ export function BorrowForm({
 
     return (
         <form onSubmit={onSubmit} className="space-y-4 relative">
-            {/* overlay spinner */}
             {formLoading && (
                 <div className="absolute inset-0 flex justify-center items-center bg-surface-light/60 dark:bg-surface-dark/60 rounded-lg z-10">
                     <svg
@@ -132,13 +121,12 @@ export function BorrowForm({
                 </div>
             )}
 
-            {/* input */}
             <div className={formLoading ? 'pointer-events-none opacity-60' : ''}>
                 <label
                     htmlFor="amount"
                     className="block text-sm font-medium mb-1 text-text-secondary"
                 >
-                    Cantidad a pedir prestado
+                    Amount to borrow
                 </label>
 
                 <div className="relative">
@@ -156,7 +144,9 @@ export function BorrowForm({
                     />
                     <button
                         type="button"
-                        onClick={() => reset({ amount: parseFloat(maxBorrowable.toFixed(2)) })}
+                        onClick={() =>
+                            reset({ amount: parseFloat(maxBorrowable.toFixed(2)) })
+                        }
                         disabled={formLoading}
                         className="absolute right-2 top-1/2 -translate-y-1/2
                        bg-secondary-light dark:bg-secondary text-xs font-medium
@@ -171,22 +161,20 @@ export function BorrowForm({
                 )}
 
                 <p className="mt-1 text-sm text-text-secondary dark:text-text-secondary-dark">
-                    Puedes pedir hasta{' '}
+                    You can borrow up to{' '}
                     <strong>
                         {maxBorrowable.toFixed(2)} {symbol}
                     </strong>{' '}
                     (LTV {m.ltvRatio}%).
                 </p>
 
-                {/* aviso HF */}
                 {amountValue > 0 && futureHf < 1 && (
                     <p className="mt-1 text-xs text-danger">
-                        Esta cantidad haría que tu Health-Factor bajase de 1 → la tx fallará
+                        This amount would drop your Health Factor below 1 → tx will revert
                     </p>
                 )}
             </div>
 
-            {/* botón */}
             <button
                 type="submit"
                 disabled={formLoading || futureHf < 1}
@@ -195,7 +183,10 @@ export function BorrowForm({
                    transition disabled:opacity-50"
             >
                 {isProcessing ? (
-                    <svg className="animate-spin h-5 w-5 text-surface-light" viewBox="0 0 24 24">
+                    <svg
+                        className="animate-spin h-5 w-5 text-surface-light"
+                        viewBox="0 0 24 24"
+                    >
                         <circle
                             className="opacity-25"
                             cx="12"
@@ -211,7 +202,7 @@ export function BorrowForm({
                         />
                     </svg>
                 ) : (
-                    `Pedir prestado ${symbol}`
+                    `Borrow ${symbol}`
                 )}
             </button>
         </form>

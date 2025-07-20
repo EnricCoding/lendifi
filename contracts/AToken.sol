@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title AToken
- * @notice Token de depósito de LendiFi. Se miente/quem a través de LendingPool.
+ * @title LendiFi aToken
+ * @dev Interest‑bearing token; only the LendingPool (contract owner) can mint or burn.
  */
 contract AToken is ERC20, Ownable {
     constructor(
@@ -14,16 +14,12 @@ contract AToken is ERC20, Ownable {
         string memory symbol
     ) ERC20(name, symbol) Ownable(msg.sender) {}
 
-    /**
-     * @notice Mienta aTokens. Solo puede llamarlo el LendingPool (owner).
-     */
+    /// Mint aTokens to `to`; callable only by LendingPool.
     function mint(address to, uint256 amount) external onlyOwner {
         _mint(to, amount);
     }
 
-    /**
-     * @notice Quema aTokens. Solo puede llamarlo el LendingPool (owner).
-     */
+    /// Burn aTokens from `from`; callable only by LendingPool.
     function burn(address from, uint256 amount) external onlyOwner {
         _burn(from, amount);
     }

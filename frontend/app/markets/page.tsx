@@ -1,4 +1,3 @@
-// frontend/app/markets/page.tsx
 'use client';
 
 import React from 'react';
@@ -12,11 +11,11 @@ export default function MarketsPage() {
     return (
         <div className="min-h-screen bg-bg-light dark:bg-bg-dark px-6 py-6">
             <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark mb-4">
-                Mercados Disponibles
+                Available Markets
             </h1>
             <p className="text-text-secondary dark:text-text-secondary-dark mb-6">
-                Explora los mercados disponibles. Aquí puedes ver el precio actual y la utilización de cada token.
-                Haz clic en "Ver detalles" para gestionar depósitos, préstamos y repagos.
+                Explore the available markets. Here you can see each token&#39;s current price and utilisation.
+                Click &quot;View details&quot; to manage deposits, borrows and repayments.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Object.values(MARKETS).map(({ symbol, tokenAddress }) => (

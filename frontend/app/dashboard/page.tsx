@@ -1,4 +1,3 @@
-// frontend/app/dashboard/page.tsx
 'use client';
 
 import React from 'react';
@@ -13,15 +12,15 @@ const MARKETS = [
 ] as const;
 
 export default function DashboardPage() {
-    // sólo mostramos los TokenCard
     return (
         <div className="min-h-screen bg-bg-light dark:bg-bg-dark px-4 py-6">
             <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark mb-4">
-                Dashboard de Mercados
+                Markets Dashboard
             </h1>
             <p className="text-text-secondary dark:text-text-secondary-dark mb-6">
-                Aquí puedes ver en tiempo real tu colateral, deuda y Health Factor por mercado.
+                View your collateral, debt, and health factor in real time for each market.
             </p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {MARKETS.map(({ symbol, tokenAddress }) => (
                     <TokenCard

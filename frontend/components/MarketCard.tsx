@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePoolData } from '@/hooks';
 import { useDepositApy } from '@/hooks/useDepositApy';          // ➜ nuevo
-import { Tooltip } from './ui/Tooltip';
 import { MARKETS } from '@/config/markets';
 
 /* ───────── helpers ───────── */

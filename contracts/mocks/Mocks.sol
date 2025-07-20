@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-/* -------------------------------------------------------------------------- */
-/*                         Mock Chainlink-style Oracle                        */
-/* -------------------------------------------------------------------------- */
+/// @title Mock Chainlink‑style price oracle (8‑decimals)
 contract MockOracle {
-    uint8 public constant decimals = 8; // igual que Chainlink
-    mapping(address => uint256) private _price; // token ⇒ precio
+    /// @notice Same decimals as Chainlink feeds
+    uint8 public constant decimals = 8;
 
-    /** Permite fijar un precio manualmente. */
+    /// token => price (8‑decimals)
+    mapping(address => uint256) private _price;
+
+    /// @notice Manually set a mock price for `token`
     function setPrice(address token, uint256 price) external {
         _price[token] = price;
     }
 
-    /**
-     * Versión mínima compatible con tu PriceOracle.getPrice:
-     * devuelve (price, decimals).
-     */
+    /// @notice Minimal interface required by PriceOracle.getPrice()
+    /// @return price current mock price
+    /// @return decs  fixed decimals (8)
     function getPrice(
         address token
     ) external view returns (uint256 price, uint8 decs) {
@@ -25,20 +25,18 @@ contract MockOracle {
     }
 }
 
-/* -------------------------------------------------------------------------- */
-/*                     Mock Interest-Rate-Model (todo 0 %)                    */
-/* -------------------------------------------------------------------------- */
+/// @title Mock Interest‑Rate Model (always 0 %)
 contract MockInterestRateModel {
     uint256 public constant RAY = 1e27;
 
-    /** 0 % para cualquier utilización -> facilita los tests. */
+    /// @notice Borrow rate is always 0 % (simplifies unit tests)
     function getBorrowRate(
         uint256 /*utilization*/
     ) external pure returns (uint256) {
         return 0;
     }
 
-    /** 0 % depósitos. */
+    /// @notice Deposit rate is always 0 %
     function getDepositRate(
         uint256 /*utilization*/,
         uint256 /*reserveFactor*/

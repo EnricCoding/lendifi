@@ -1,4 +1,3 @@
-// hooks/usePoolData.ts
 import { useQuery } from "@tanstack/react-query";
 import { ethers } from "ethers";
 import LendingPoolAbi from "../abis/LendingPool.json";
@@ -9,8 +8,8 @@ export interface PoolData {
   totalCollateral: bigint;
   totalDebt: bigint;
   price: number;
-  borrowApr: number; // 0.05 = 5%
-  depositApy: number; // 0.04 = 4%
+  borrowApr: number; 
+  depositApy: number; 
 }
 
 export function usePoolData(
@@ -36,7 +35,6 @@ export function usePoolData(
         provider
       );
 
-      // 1) Reserva + precio
       const [reserve, priceRes] = await Promise.all([
         poolContract.getReserveData(tokenAddress),
         oracleContract.getPrice(tokenAddress),
@@ -49,14 +47,12 @@ export function usePoolData(
       const priceDec = Number(priceRes[1] as bigint);
       const price = Number(rawPrice) / 10 ** priceDec;
 
-      // 2) Utilización en RAY = debt * 1e27 / collateral
       const RAY = BigInt("1" + "0".repeat(27));
       const utilRay =
         totalCollateral === BigInt(0)
           ? RAY
           : (totalDebt * RAY) / totalCollateral;
 
-      // 3) Tasa de préstamo por segundo (RAY), convertir a APR
       const rateModelAddr = await poolContract.rateModel();
       const model = new ethers.Contract(
         rateModelAddr,
@@ -66,11 +62,9 @@ export function usePoolData(
       const ratePerSec = (await model.getBorrowRate(utilRay)) as bigint;
       const secsPerYear = 60 * 60 * 24 * 365;
 
-      // ratePerSec es una RAY; lo pasamos a número: ratePerSec / 1e27 = per second
       const perSec = Number(ratePerSec) / 1e27;
       const borrowApr = perSec * secsPerYear;
 
-      // 4) APY de depósito = APR * utilizationFraction
       const utilFrac = Number(utilRay) / 1e27;
       const depositApy = borrowApr * utilFrac;
 

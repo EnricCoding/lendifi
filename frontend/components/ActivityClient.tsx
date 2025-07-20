@@ -23,21 +23,20 @@ export default function ActivityClient() {
     const [mounted, setMounted] = useState(false);
     const [selected, setSelected] = useState<keyof typeof MARKETS>('USDC');
 
-    /* ▼ selector de rango de días */
+    /* ▼ day‑range selector */
     const ranges = [
-        { label: '7 d', value: 7 },
-        { label: '30 d', value: 30 },
-        { label: '90 d', value: 90 },
-        { label: '1 año', value: 365 },
+        { label: '7 d', value: 7 },
+        { label: '30 d', value: 30 },
+        { label: '90 d', value: 90 },
+        { label: '1 year', value: 365 },
     ];
     const [daysAgo, setDaysAgo] = useState<number>(365);
-    /* ▲ */
 
     useEffect(() => setMounted(true), []);
 
     const userAddress = address as `0x${string}`;
     const market = MARKETS[selected];
-    const tokenSymbol = market.symbol;               // ← símbolo (USDC, DAI…)
+    const tokenSymbol = market.symbol;
 
     const {
         data: historyData,
@@ -54,48 +53,45 @@ export default function ActivityClient() {
     );
     const history: Point[] = historyData ?? [];
 
-    /* gráfico (antiguo → reciente, sólo fecha) */
     const chartData = useMemo(
         () =>
             history.map((p) => ({
-                time: new Date(p.ts).toLocaleDateString('es-ES', {
+                time: new Date(p.ts).toLocaleDateString('en-US', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
                 }),
-                Colateral: p.collateral,
-                Deuda: p.debt,
+                Collateral: p.collateral,
+                Debt: p.debt,
             })),
         [history]
     );
 
-    /* tabla (reciente → antiguo) */
     const tableData = useMemo(() => [...history].sort((a, b) => b.ts - a.ts), [
         history,
     ]);
 
-    /* estados iniciales */
     if (!mounted)
         return (
             <div className="p-6 flex items-center justify-center">
-                Cargando historial…
+                Loading history…
             </div>
         );
 
     if (!isConnected)
         return (
             <div className="p-6 flex items-center justify-center">
-                <p>Conecta tu wallet para ver tu historial de actividad.</p>
+                <p className="text-black">
+                    Connect your wallet to view your activity history.
+                </p>
             </div>
         );
 
     return (
         <div className="space-y-6 p-6">
-            {/* Selector de mercado, rango y refrescar */}
             <div className="flex flex-wrap gap-4 items-center">
-                {/* Mercado */}
                 <label className="flex items-center gap-2 text-black">
-                    Mercado:
+                    Market:
                     <select
                         value={selected}
                         onChange={(e) =>
@@ -111,9 +107,8 @@ export default function ActivityClient() {
                     </select>
                 </label>
 
-                {/* Rango */}
                 <label className="flex items-center gap-2 text-black">
-                    Rango:
+                    Range:
                     <select
                         value={daysAgo}
                         onChange={(e) => setDaysAgo(Number(e.target.value))}
@@ -127,20 +122,18 @@ export default function ActivityClient() {
                     </select>
                 </label>
 
-                {/* Botón actualizar */}
                 <button
                     onClick={() => refetch()}
                     disabled={isLoading || isFetching}
                     className={`px-4 py-2 rounded-md text-white transition ${isLoading || isFetching
-                        ? 'bg-blue-300 cursor-not-allowed opacity-70'
-                        : 'bg-blue-600 hover:bg-blue-500'
+                            ? 'bg-blue-300 cursor-not-allowed opacity-70'
+                            : 'bg-blue-600 hover:bg-blue-500'
                         }`}
                 >
-                    {isLoading || isFetching ? 'Actualizando…' : 'Actualizar'}
+                    {isLoading || isFetching ? 'Refreshing…' : 'Refresh'}
                 </button>
             </div>
 
-            {/* Contenido principal */}
             {isLoading || isFetching ? (
                 <div className="flex flex-col items-center justify-center h-64">
                     <svg
@@ -163,25 +156,24 @@ export default function ActivityClient() {
                             d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                         />
                     </svg>
-                    <span className="text-text-secondary">Cargando datos…</span>
+                    <span className="text-text-secondary">Loading data…</span>
                 </div>
             ) : isError ? (
                 <div>
-                    <p>Error cargando el historial.</p>
+                    <p>Error loading history.</p>
                     <button
                         onClick={() => refetch()}
                         className="px-4 py-2 bg-red-600 text-white rounded-md"
                     >
-                        Reintentar
+                        Retry
                     </button>
                 </div>
             ) : history.length === 0 ? (
                 <p className="mt-2 text-black">
-                    No hay movimientos en el rango seleccionado.
+                    No activity in the selected range.
                 </p>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Gráfico */}
                     <div className="p-4 bg-gray-50 rounded-lg shadow">
                         <ResponsiveContainer width="100%" height={300}>
                             <LineChart
@@ -202,12 +194,16 @@ export default function ActivityClient() {
                                         angle: -90,
                                         position: 'outsideLeft',
                                         dy: 10,
-                                        style: { fill: '#1F2937', fontSize: 12, fontWeight: 600 },
+                                        style: {
+                                            fill: '#1F2937',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                        },
                                     }}
                                 />
 
                                 <RechartsTooltip
-                                    labelFormatter={(l) => `Fecha: ${l}`}
+                                    labelFormatter={(l) => `Date: ${l}`}
                                     formatter={(v: number) => `${v.toFixed(2)} ${tokenSymbol}`}
                                 />
 
@@ -215,15 +211,15 @@ export default function ActivityClient() {
 
                                 <Line
                                     type="monotone"
-                                    dataKey="Colateral"
-                                    name={`Colateral (${tokenSymbol})`}
+                                    dataKey="Collateral"
+                                    name={`Collateral (${tokenSymbol})`}
                                     stroke="#3182ce"
                                     dot={false}
                                 />
                                 <Line
                                     type="monotone"
-                                    dataKey="Deuda"
-                                    name={`Deuda (${tokenSymbol})`}
+                                    dataKey="Debt"
+                                    name={`Debt (${tokenSymbol})`}
                                     stroke="#e53e3e"
                                     dot={false}
                                 />
@@ -231,7 +227,6 @@ export default function ActivityClient() {
                         </ResponsiveContainer>
                     </div>
 
-                    {/* Tabla con paginación */}
                     <HistoryTable data={tableData} />
                 </div>
             )}

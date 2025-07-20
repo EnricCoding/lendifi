@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-/// @dev Simula un AggregatorV3 de Chainlink para tests.
 contract MockAggregator {
     int256 private _answer;
     uint8 private immutable _decimals;
@@ -21,11 +20,11 @@ contract MockAggregator {
         external
         view
         returns (
-            uint80, // roundId
+            uint80, 
             int256 answer,
-            uint256, // startedAt
+            uint256,
             uint256 updatedAt,
-            uint80 // answeredInRound
+            uint80 
         )
     {
         return (0, _answer, 0, _updatedAt, 0);

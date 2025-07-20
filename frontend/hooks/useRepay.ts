@@ -1,4 +1,3 @@
-// frontend/hooks/useRepay.ts
 "use client";
 
 import { useEffect } from "react";
@@ -9,14 +8,9 @@ import LendingPoolAbi from "@/abis/LendingPool.json";
 
 const POOL_ADDRESS = process.env.NEXT_PUBLIC_LENDING_POOL_ADDRESS!;
 
-/**
- * Hook para reembolsar (repay) deuda y forzar que poolData + userPosition
- * se refresquen en cuanto la transacción queda confirmada.
- */
 export function useRepay(tokenAddress: string) {
   const queryClient = useQueryClient();
 
-  /* 1⃣  Emitir la transacción */
   const {
     writeContract,
     data: txHash,
@@ -32,7 +26,6 @@ export function useRepay(tokenAddress: string) {
       args: [tokenAddress, amountWei],
     });
 
-  /* 2⃣  Esperar recibo */
   const {
     isLoading: isWaitingReceipt,
     isSuccess,
@@ -40,21 +33,18 @@ export function useRepay(tokenAddress: string) {
     error: receiptError,
   } = useWaitForTransactionReceipt({ hash: txHash });
 
-  /* 3⃣  Refrescar caché al éxito */
   useEffect(() => {
     if (isSuccess) {
       refreshPool(queryClient, POOL_ADDRESS, tokenAddress);
     }
   }, [isSuccess, queryClient, tokenAddress]);
 
-  /* 4⃣  Log de error (opcional) */
   useEffect(() => {
     if (isError && receiptError) {
-      console.error("[useRepay] ❌", receiptError);
+      console.error("[useRepay] ", receiptError);
     }
   }, [isError, receiptError]);
 
-  /* Flags para la UI */
   const isProcessing = isBroadcasting || isWaitingReceipt;
   const error = broadcastError ?? receiptError;
 

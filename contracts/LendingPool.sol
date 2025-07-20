@@ -2,8 +2,8 @@
 pragma solidity ^0.8.28;
 
 /**
- * @title  LendingPool (LendiFi v0.4-a)
- * @notice Depósitos, préstamos, repagos y liquidaciones con chequeo de Health-Factor.
+ * @title LendingPool
+ * @notice Handles deposits, borrows, repayments and liquidations with health‑factor checks.
  */
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -12,19 +12,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./AToken.sol";
 import "./PriceOracle.sol";
-import "./InterestRateModel.sol"; // ▸ WadRayMath incluida
+import "./InterestRateModel.sol";
 
 contract LendingPool is ReentrancyGuard, Pausable, Ownable {
     using SafeERC20 for IERC20;
     using WadRayMath for uint256;
 
-    /* ───────────────────────── constantes ───────────────────────── */
+    /* Constants */
     uint256 private constant RAY = 1e27;
     uint256 private constant WAD = 1e18;
-    uint256 private constant MAX_LTV_WAD = 8e17; // 80 %
-    uint256 private constant LIQ_BONUS_WAD = 105e16; // 5 % bonus → 1.05 WAD
+    uint256 private constant MAX_LTV_WAD = 8e17; // 80 %
+    uint256 private constant LIQ_BONUS_WAD = 105e16; // 5 % bonus
 
-    /* ───────────────────────── dependencias ─────────────────────── */
+    /* Immutable dependencies */
     AToken public immutable aToken;
     PriceOracle public immutable oracle;
     InterestRateModel public immutable rateModel;
@@ -42,15 +42,15 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         rateModel = _rateModel;
     }
 
-    /* ────────────────────────── errores ─────────────────────────── */
+    /* Custom errors */
     error AmountZero();
     error TokenZero();
     error InsufficientCollateral();
     error InsufficientDebt();
-    error HealthFactorTooLow(); // HF < 1 en withdraw / borrow
-    error HealthFactorOk(); // HF ≥ 1 en liquidate
+    error HealthFactorTooLow(); // HF < 1 on withdraw/borrow
+    error HealthFactorOk(); // HF ≥ 1 on liquidate
 
-    /* ─────────────────────── datos de reserva ───────────────────── */
+    /* Reserve & user state */
     struct ReserveData {
         uint256 totalCollateral;
         uint256 totalDebt;
@@ -58,11 +58,11 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         uint40 lastUpdate;
     }
 
-    mapping(address => ReserveData) private _reserves; // token → reserva
-    mapping(address => mapping(address => uint)) private _userCollateral; // token → user → colateral
-    mapping(address => mapping(address => uint)) private _userDebt; // token → user → deuda
+    mapping(address => ReserveData) private _reserves; // token ⇒ reserve
+    mapping(address => mapping(address => uint256)) private _userCollateral; // token ⇒ user ⇒ collateral
+    mapping(address => mapping(address => uint256)) private _userDebt; // token ⇒ user ⇒ debt
 
-    /* ───────────────────────── eventos ──────────────────────────── */
+    /* Events */
     event Deposit(address indexed token, address indexed user, uint256 amount);
     event Withdraw(address indexed token, address indexed user, uint256 amount);
     event Borrow(address indexed token, address indexed user, uint256 amount);
@@ -75,13 +75,13 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
     );
     event EmergencyWithdrawal(address indexed token, uint256 amount);
 
-    /* ───────────────────────── modifiers ────────────────────────── */
+    /* Modifiers */
     modifier validToken(address token) {
         if (token == address(0)) revert TokenZero();
         _;
     }
 
-    /* ══════════════════════ FUNCIONES DE USUARIO ═════════════════════ */
+    /* ========== USER FUNCTIONS ========== */
 
     function deposit(
         address token,
@@ -108,7 +108,6 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         uint256 coll = _userCollateral[token][msg.sender];
         if (coll < amount) revert InsufficientCollateral();
 
-        // ── comprobar que el HF tras la retirada sigue ≥ 1 ──
         uint256 hfAfter = _healthFactor(
             token,
             coll - amount,
@@ -132,8 +131,6 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         _accrueInterest(token);
 
         uint256 newDebt = _userDebt[token][msg.sender] + amount;
-
-        // ── comprobar HF con la nueva deuda ──
         uint256 hfAfter = _healthFactor(
             token,
             _userCollateral[token][msg.sender],
@@ -200,7 +197,7 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         emit Liquidate(token, user, repayAmount, seize);
     }
 
-    /* ══════════════════════ VISTAS PÚBLICAS ═════════════════════ */
+    /* ========== VIEW FUNCTIONS ========== */
 
     function getReserveData(
         address token
@@ -208,7 +205,6 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         return _reserves[token];
     }
 
-    /// Cantidad de colateral que un usuario tiene depositada para un token
     function getUserCollateral(
         address token,
         address user
@@ -216,7 +212,6 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         return _userCollateral[token][user];
     }
 
-    /// Cantidad de deuda que un usuario tiene para un token
     function getUserDebt(
         address token,
         address user
@@ -224,7 +219,6 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         return _userDebt[token][user];
     }
 
-    /// Health-Factor (WAD). ∞ si no hay deuda
     function getHealthFactor(
         address token,
         address user
@@ -237,7 +231,7 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
             );
     }
 
-    /* ══════════════════════ ADMIN / GUARD ══════════════════════ */
+    /* ========== ADMIN ========== */
 
     function pause() external onlyOwner {
         _pause();
@@ -255,7 +249,7 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         emit EmergencyWithdrawal(token, bal);
     }
 
-    /* ══════════════════════ INTERNAS ══════════════════════════ */
+    /* ========== INTERNAL LOGIC ========== */
 
     function _updateReserve(address token) internal {
         ReserveData storage r = _reserves[token];
@@ -273,7 +267,7 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         uint256 util = r.totalCollateral == 0
             ? RAY
             : (r.totalDebt * RAY) / r.totalCollateral;
-        uint256 rate = rateModel.getBorrowRate(util); // RAY/seg
+        uint256 rate = rateModel.getBorrowRate(util); // RAY/s
 
         r.borrowIndex = uint128(
             (rate * dt * r.borrowIndex) / RAY + r.borrowIndex
@@ -281,7 +275,6 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         r.lastUpdate = nowTs;
     }
 
-    /// cálculo interno reutilizable
     function _healthFactor(
         address token,
         uint256 collateral,
@@ -290,11 +283,9 @@ contract LendingPool is ReentrancyGuard, Pausable, Ownable {
         if (debt == 0) return type(uint256).max;
 
         (uint256 price, uint8 pDec) = oracle.getPrice(token);
-
         uint256 collUsd = (collateral * price) / 10 ** pDec;
         uint256 debtUsd = (debt * price) / 10 ** pDec;
 
-        // HF = (collUsd / debtUsd) / maxLTV
         return (collUsd * WAD) / ((debtUsd * WAD) / MAX_LTV_WAD);
     }
 }

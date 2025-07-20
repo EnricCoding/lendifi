@@ -1,4 +1,3 @@
-// frontend/components/HistoryTable.tsx
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -13,7 +12,6 @@ interface HistoryTableProps {
 export function HistoryTable({ data }: HistoryTableProps) {
     const [currentPage, setCurrentPage] = useState(1);
 
-    // reiniciar página cuando cambian los datos
     React.useEffect(() => {
         setCurrentPage(1);
     }, [data]);
@@ -69,7 +67,6 @@ export function HistoryTable({ data }: HistoryTableProps) {
                 </table>
             </div>
 
-            {/* Paginador */}
             <div className="flex items-center justify-center space-x-2 mt-4">
                 <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}

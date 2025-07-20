@@ -8,7 +8,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 
 
-// 1. Instancia React Query
 const queryClient = new QueryClient();
 
 const wagmiConfig = createConfig({

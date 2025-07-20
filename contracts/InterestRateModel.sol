@@ -3,9 +3,8 @@ pragma solidity ^0.8.28;
 
 /**
  * @title InterestRateModel
- * @notice Estrategia lineal segmentada para LendiFi.
- *         Inspirada en Aave v2: dos tramos (antes/después del punto óptimo).
- * @dev   Todas las tasas se expresan en RAYs (1e27) por segundo.
+ * @notice Two‑segment linear curve (Aave‑style): slope 1 below the optimal
+ *         utilization, slope 2 above. Rates are returned in RAY/second (1 RAY = 1e27).
  */
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -22,42 +21,35 @@ library WadRayMath {
 contract InterestRateModel is Ownable {
     using WadRayMath for uint256;
 
-    // ────────────────────────────────────────────────────────────────────────────
-    // ▸ Parámetros de la curva
-    // ────────────────────────────────────────────────────────────────────────────
+    /// @dev Curve parameters (all rates in RAY/second; `optimal` in WAD).
     struct Params {
-        uint256 baseRate; // tasa mínima cuando U = 0     (ray/sec)
-        uint256 slope1; // pendiente antes del óptimo   (ray/sec)
-        uint256 slope2; // pendiente después del óptimo (ray/sec)
-        uint256 optimal; // Utilización óptima, en WAD (1e18 = 100%)
+        uint256 baseRate; // borrow rate when utilisation = 0
+        uint256 slope1; // rate gradient below `optimal`
+        uint256 slope2; // rate gradient above `optimal`
+        uint256 optimal; // optimal utilisation (1e18 = 100 %)
     }
 
     Params public params;
-
     event ParamsUpdated(Params p);
 
     constructor(Params memory p) Ownable(msg.sender) {
         _updateParams(p);
     }
 
-    /**
-     * @notice Devuelve la tasa de préstamo (ray/seg) dada la utilización U (WAD).
-     */
+    /// @notice Borrow rate in RAY/second for a given utilisation (WAD).
     function getBorrowRate(
         uint256 utilizationWad
     ) public view returns (uint256) {
         if (utilizationWad <= params.optimal) {
-            // tramo 1: base + slope1 * U / optimal
-            uint256 factor = (utilizationWad * WadRayMath.WAD) / params.optimal; // escala a WAD
+            uint256 factor = (utilizationWad * WadRayMath.WAD) / params.optimal;
             return
                 params.baseRate +
                 params.slope1.rayMul(
                     (factor * WadRayMath.RAY) / WadRayMath.WAD
                 );
         } else {
-            // tramo 2: base + slope1 + slope2 * (U - optimal)/(1-optimal)
             uint256 excess = utilizationWad - params.optimal;
-            uint256 denominator = WadRayMath.WAD - params.optimal; // siempre >0
+            uint256 denominator = WadRayMath.WAD - params.optimal;
             uint256 factor = (excess * WadRayMath.WAD) / denominator;
             return
                 params.baseRate +
@@ -69,9 +61,9 @@ contract InterestRateModel is Ownable {
     }
 
     /**
-     * @notice Estima la tasa de depósito aplicando un share = borrowRate * U * (1 - reserveFactor).
-     * @param utilizationWad Utilización (totalDebt / totalCollateral) en WAD.
-     * @param reserveFactorWad Parte de intereses destinada a la tesorería, en WAD.
+     * @notice Deposit rate = borrowRate × utilisation × (1 − reserveFactor).
+     * @param utilizationWad totalDebt / totalCollateral (WAD)
+     * @param reserveFactorWad share of interest kept by the protocol (WAD)
      */
     function getDepositRate(
         uint256 utilizationWad,
@@ -85,7 +77,7 @@ contract InterestRateModel is Ownable {
             );
     }
 
-    /** @dev Solo owner puede ajustar la curva. */
+    /// @notice Owner can update curve parameters.
     function updateParams(Params memory p) external onlyOwner {
         _updateParams(p);
     }

@@ -8,18 +8,14 @@ import { ethers } from "ethers";
 import { usePoolData } from "./usePoolData";
 import LendingPoolAbi from "@/abis/LendingPool.json";
 
-/* ──────────────── tipos ──────────────── */
 export interface UserPosition {
-  collateral: bigint;      // unidades del token
-  debt: bigint;            // unidades del token
-  collateralValue: number; // USD
-  debtValue: number;       // USD
-  healthFactor: number;    // decimal (∞ si no hay deuda)
+  collateral: bigint; 
+  debt: bigint;        
+  collateralValue: number;
+  debtValue: number; 
+  healthFactor: number;
 }
 
-/**
- * Devuelve la posición del usuario en la pool y alias de ayuda.
- */
 export function useUserPosition(
   poolAddress: string,
   tokenAddress: string,
@@ -28,14 +24,12 @@ export function useUserPosition(
   const { address, isConnected } = useAccount();
   const poolQuery = usePoolData(poolAddress, tokenAddress, oracleAddress);
 
-  /* ───────────── query react-query ───────────── */
   const query: UseQueryResult<UserPosition, Error> = useQuery<UserPosition>({
     queryKey: ["userPosition", poolAddress, tokenAddress, address],
     enabled: isConnected && !!address && poolQuery.isSuccess,
     staleTime: 10_000,
     refetchInterval: 30_000,
 
-    /* --------------- loader --------------- */
     queryFn: async (): Promise<UserPosition> => {
       if (!address) throw new Error("Wallet no conectada");
 
@@ -86,7 +80,6 @@ export function useUserPosition(
     },
   });
 
-  /* ───────── alias para el UI ───────── */
   return {
     ...query,
     deposited:   query.data?.collateral    ?? BigInt(0),

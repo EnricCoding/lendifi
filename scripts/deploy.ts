@@ -64,13 +64,6 @@ async function main() {
   // 5) Transferir propiedad de aToken al pool
   await (await aToken.transferOwnership(pool.address)).wait();
   console.log("Ownership of aToken transferred to LendingPool");
-
-  // 6) Configurar LTV y threshold (si implementado)
-  // Ejemplo: LTV=75% (7500), Threshold=80% (8000) sobre base 1e4
-  // await (await pool.configureReserve(USDC, 7500, 8000)).wait();
-  // console.log("USDC reserve configured (LTV 75%, Threshold 80%)");
-  // await (await pool.configureReserve(DAI,  7500, 8000)).wait();
-  // console.log("DAI  reserve configured (LTV 75%, Threshold 80%)");
 }
 
 main()
