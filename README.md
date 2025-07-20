@@ -163,7 +163,7 @@ npx hardhat compile
 npx hardhat run scripts/deploy.ts --network sepolia
 ```
 
-Sample output:
+Sample output (Just an example, don't copy exactly this address):
 
 ```
 Deploying with: 0xYourDeployer…
