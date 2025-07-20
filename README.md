@@ -44,6 +44,9 @@ it with testnet tokens.
 
 ## 🎬 Demo
 
+**Watch a 3‑min walkthrough on YouTube →  
+[▶️ LendiFi Demo](https://www.youtube.com/watch?v=BbkBqIiH3Ew&ab_channel=EnricRobert)**
+
 Here are a couple of screenshots showing the Markets Dashboard—where you can deposit, borrow, repay, withdraw, and liquidate—and the Activity History view:
 
 1. **Markets Dashboard** – where you can deposit, borrow, repay, withdraw, and liquidate assets.
