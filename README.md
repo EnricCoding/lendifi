@@ -53,7 +53,7 @@ Here are a couple of screenshots showing the Markets Dashboard—where you can d
 
 2. **Activity History** – showing your collateral and debt over time.
 
-   ![Activity History](docs/creenshots/lendifi-activity-screenshot.png)
+   ![Activity History](docs/screenshots/lendifi-activity-screenshot.png)
 
 ## 🏗️ High‑Level Architecture
 
