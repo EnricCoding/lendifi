@@ -4,7 +4,7 @@ A lean, Aave‑inspired DeFi lending & borrowing protocol with upgradable smart�
 
 ---
 
-## What Is LendiFi?
+## What Is LendiFi?
 
 Think of **LendiFi** as a crypto‑native savings‑and‑loan co‑op that runs entirely
 on smart‑contracts:
