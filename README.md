@@ -42,14 +42,18 @@ it with testnet tokens.
 
 ---
 
+
 ## 🎬 Demo
 
 Here are a couple of screenshots showing the Markets Dashboard—where you can deposit, borrow, repay, withdraw, and liquidate—and the Activity History view:
 
-<div align="center">
-  <img src="docs/screenshots/lendifi-activity-screenshot.png" alt="Dashboard view" width="45%" />
-  <img src="docs/screenshots/markets-usdc-screenshot.png" alt="Activity history view" width="45%" />
-</div>
+1. **Markets Dashboard** – where you can deposit, borrow, repay, withdraw, and liquidate assets.
+
+   ![Markets Dashboard](docs/screenshots/markets-usdc-screenshot.png)
+
+2. **Activity History** – showing your collateral and debt over time.
+
+   ![Activity History](docs/creenshots/lendifi-activity-screenshot.png)
 
 ## 🏗️ High‑Level Architecture
 
