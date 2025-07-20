@@ -9,29 +9,29 @@ A lean, Aave‑inspired DeFi lending & borrowing protocol with upgradable smart�
 Think of **LendiFi** as a crypto‑native savings‑and‑loan co‑op that runs entirely
 on smart‑contracts:
 
-* You **deposit** tokens (e.g. USDC, DAI) and immediately start earning interest.  
+- You **deposit** tokens (e.g. USDC, DAI) and immediately start earning interest.  
   In return you receive **aTokens** – receipts that grow in value over time.
 
-* Those same deposits act as **collateral** that let you **borrow** other tokens
+- Those same deposits act as **collateral** that let you **borrow** other tokens
   without selling your original holdings, similar to taking a loan against
   your house or car.
 
-* You can **repay** whenever you like to unlock more borrowing power or
+- You can **repay** whenever you like to unlock more borrowing power or
   simply **withdraw** your collateral plus the interest you earned.
 
-* If a borrower’s safety buffer – the **Health Factor** – ever falls below 1
+- If a borrower’s safety buffer – the **Health Factor** – ever falls below 1
   (meaning their loan is no longer fully backed), anyone on the network can
   **liquidate** that position: they repay part of the debt and receive a small
   bonus of the collateral.  
   This keeps the system solvent **without** needing a central authority.
 
-| User Action | What actually happens on‑chain |
-|-------------|--------------------------------|
-| **Deposit** | Smart‑contract mints interest‑bearing **aTokens** at a 1 : 1 ratio with the supplied ERC‑20. |
-| **Borrow**  | Contract locks your aTokens as collateral and transfers up to the allowed _Loan‑to‑Value (LTV)_ amount in the underlying token. |
-| **Repay**   | Debt balance shrinks (principal + interest), restoring Health Factor. |
-| **Withdraw**| Contract burns your aTokens and releases the matching collateral. |
-| **Liquidate** | When **HF < 1** a third party repays part of the debt and receives collateral at a 5 % discount. |
+| User Action   | What actually happens on‑chain                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Deposit**   | Smart‑contract mints interest‑bearing **aTokens** at a 1 : 1 ratio with the supplied ERC‑20.                                    |
+| **Borrow**    | Contract locks your aTokens as collateral and transfers up to the allowed _Loan‑to‑Value (LTV)_ amount in the underlying token. |
+| **Repay**     | Debt balance shrinks (principal + interest), restoring Health Factor.                                                           |
+| **Withdraw**  | Contract burns your aTokens and releases the matching collateral.                                                               |
+| **Liquidate** | When **HF < 1** a third party repays part of the debt and receives collateral at a 5 % discount.                                |
 
 In short, LendiFi showcases the **core building blocks of a modern DeFi money
 market** – deposits that earn yield, over‑collateralised loans, and automated risk
@@ -50,7 +50,7 @@ LendiFi follows a classic money‑market layout: a set of upgrade‑safe smart�
 
 **How to read the diagram**
 
-- **User wallets** (Metamask, Rabby…) connect through **WalletConnect / Injected Provider**.  
+- **User wallets** (Metamask, Rabby…) connect through **WalletConnect / Injected Provider**.
 - Frontend calls the **LendingPool** contract for `deposit`, `borrow`, `repay`, `withdraw`, `liquidate`.
 - **aToken** is minted / burned 1‑to‑1 with the underlying collateral.
 - **PriceOracle** fetches USD prices from Chainlink feeds.
@@ -58,31 +58,31 @@ LendiFi follows a classic money‑market layout: a set of upgrade‑safe smart�
 - Liquidations occur automatically when a position’s **Health Factor < 1**.
 
 > **Source folders**
-> - `contracts/` – Solidity contracts (`LendingPool.sol`, `AToken.sol`, `PriceOracle.sol`, `InterestRateModel.sol`)  
-> - `frontend/`  – Next.js 14 dApp (pages, hooks, components)
+>
+> - `contracts/` – Solidity contracts (`LendingPool.sol`, `AToken.sol`, `PriceOracle.sol`, `InterestRateModel.sol`)
+> - `frontend/` – Next.js 14 dApp (pages, hooks, components)
 
 ---
 
-
 ## 🛠️ Core Tech Stack
 
-| Layer | Key Tools & Libraries | Version |
-|-------|----------------------|---------|
-| **Smart‑Contracts** | Solidity | **0.8.28** |
-|  | Hardhat | **2.24.3** |
-|  | OpenZeppelin Contracts | **5.3.0** |
-|  | Ethers (JS SDK for scripts) | **5.8.0** |
-| **Frontend** | Next.js | **14.1.0** |
-|  | React | **18.x** |
-|  | TypeScript | **5.x** |
-|  | TailwindCSS | **3.3.0** |
-|  | wagmi (React Web3 hooks) | **2.15.6** |
-|  | viem (low‑level RPC) | **2.31.4** |
-|  | Ethers (JS SDK for dApp) | **6.14.4** |
-| **State / Data** | TanStack React‑Query | **5.81.2** |
-| **Testing** | Hardhat (Mocha/Chai) | built‑in |
-|  | Jest + React Testing Library | **30.0.2 / 16.3.0** |
-| **CI / Deployment** | GitHub Actions · Vercel | — |
+| Layer               | Key Tools & Libraries        | Version             |
+| ------------------- | ---------------------------- | ------------------- |
+| **Smart‑Contracts** | Solidity                     | **0.8.28**          |
+|                     | Hardhat                      | **2.24.3**          |
+|                     | OpenZeppelin Contracts       | **5.3.0**           |
+|                     | Ethers (JS SDK for scripts)  | **5.8.0**           |
+| **Frontend**        | Next.js                      | **14.1.0**          |
+|                     | React                        | **18.x**            |
+|                     | TypeScript                   | **5.x**             |
+|                     | TailwindCSS                  | **3.3.0**           |
+|                     | wagmi (React Web3 hooks)     | **2.15.6**          |
+|                     | viem (low‑level RPC)         | **2.31.4**          |
+|                     | Ethers (JS SDK for dApp)     | **6.14.4**          |
+| **State / Data**    | TanStack React‑Query         | **5.81.2**          |
+| **Testing**         | Hardhat (Mocha/Chai)         | built‑in            |
+|                     | Jest + React Testing Library | **30.0.2 / 16.3.0** |
+| **CI / Deployment** | GitHub Actions · Vercel      | —                   |
 
 ## 📂 Repo Structure
 
@@ -129,12 +129,12 @@ cp .env.example              .env
 cp frontend/.env.example     frontend/.env.local
 ```
 
-| Key | File | Purpose |
-| --- | ---- | ------- |
-| `PRIVATE_KEY` | `.env` | Your wallet private key. Throw‑away account you control (**never commit real keys**) |
-| `SEPOLIA_RPC` | `.env` | Create account in Alchemy/Infura and get the HTTPS endpoints |
-| `NEXT_PUBLIC_SEPOLIA_RPC` | `frontend/.env.local` | Same RPC for the dApp |
-| `NEXT_PUBLIC_*_ADDRESS` | `frontend/.env.local` | **Leave blank** – will be filled after deploy |
+| Key                       | File                  | Purpose                                                                              |
+| ------------------------- | --------------------- | ------------------------------------------------------------------------------------ |
+| `PRIVATE_KEY`             | `.env`                | Your wallet private key. Throw‑away account you control (**never commit real keys**) |
+| `SEPOLIA_RPC`             | `.env`                | Create account in Alchemy/Infura and get the HTTPS endpoints                         |
+| `NEXT_PUBLIC_SEPOLIA_RPC` | `frontend/.env.local` | Same RPC for the dApp                                                                |
+| `NEXT_PUBLIC_*_ADDRESS`   | `frontend/.env.local` | **Leave blank** – will be filled after deploy                                        |
 
 > **Tip:** Register in Alchemy (Web 3 Suite of APIs) <https://www.alchemy.com/>.
 > **Tip:** Get free Sepolia ETH at <https://faucet.circle.com/>.
@@ -216,18 +216,18 @@ cd frontend && npm test
 npx hardhat run scripts/deploy.ts --network sepolia
 ```
 
-(Optional) If do you want to deploy the project finally, push `frontend/` to Vercel and add environment variables. 
+(Optional) If do you want to deploy the project finally, push `frontend/` to Vercel and add environment variables.
 
 ---
 
 # 📈 Protocol Metrics — Quick Reference
 
-| Metric | What it measures | Formula / Units |
-|--------|------------------|-----------------|
-| **Utilisation** (`u`) | Share of supplied liquidity currently borrowed.<br>0 % = idle, 100 % = fully lent. | `u = totalDebt ÷ totalCollateral` |
-| **Borrow APR** | Annual percentage rate paid by borrowers (simple, non‑compounded). | `APR = InterestRateModel.borrowRate(u)` |
-| **Deposit APY** | Effective annual yield earned by suppliers (compounded). | `APY ≈ Borrow APR × u` |
-| **Health Factor** (`HF`) | Safety buffer of a user’s position; liquidation when `HF < 1`. | `HF = (Collateral × Price × LTV) ÷ Debt` |
+| Metric                   | What it measures                                                                   | Formula / Units                          |
+| ------------------------ | ---------------------------------------------------------------------------------- | ---------------------------------------- |
+| **Utilisation** (`u`)    | Share of supplied liquidity currently borrowed.<br>0 % = idle, 100 % = fully lent. | `u = totalDebt ÷ totalCollateral`        |
+| **Borrow APR**           | Annual percentage rate paid by borrowers (simple, non‑compounded).                 | `APR = InterestRateModel.borrowRate(u)`  |
+| **Deposit APY**          | Effective annual yield earned by suppliers (compounded).                           | `APY ≈ Borrow APR × u`                   |
+| **Health Factor** (`HF`) | Safety buffer of a user’s position; liquidation when `HF < 1`.                     | `HF = (Collateral × Price × LTV) ÷ Debt` |
 
 > **Rule of thumb**  
 > • `HF > 2` = very safe • `1 < HF ≤ 2` = monitor position • `HF ≤ 1` = at risk of liquidation
@@ -236,12 +236,12 @@ npx hardhat run scripts/deploy.ts --network sepolia
 
 ## 🔍 Glossary
 
-| Term | Description |
-|------|-------------|
-| **LTV** | *Loan‑to‑Value*. Max % of collateral value that can be borrowed (e.g. 80 %). |
-| **WAD / RAY** | Fixed‑point math units: WAD = 10¹⁸, RAY = 10²⁷. |
-| **Reserve Factor** | Share of interest routed to the protocol treasury. |
-| **Liquidation Bonus** | Extra collateral a liquidator receives as incentive (e.g. 5 %). |
+| Term                  | Description                                                                  |
+| --------------------- | ---------------------------------------------------------------------------- |
+| **LTV**               | _Loan‑to‑Value_. Max % of collateral value that can be borrowed (e.g. 80 %). |
+| **WAD / RAY**         | Fixed‑point math units: WAD = 10¹⁸, RAY = 10²⁷.                              |
+| **Reserve Factor**    | Share of interest routed to the protocol treasury.                           |
+| **Liquidation Bonus** | Extra collateral a liquidator receives as incentive (e.g. 5 %).              |
 
 ---
 
