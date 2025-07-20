@@ -4,18 +4,39 @@ A lean, Aave‑inspired DeFi lending & borrowing protocol with upgradable smart�
 
 ---
 
-## 🔥 What Is LendiFi?
+## What Is LendiFi?
 
-LendiFi demonstrates the **core mechanics** of a money‑market protocol:
+Think of **LendiFi** as a crypto‑native savings‑and‑loan co‑op that runs entirely
+on smart‑contracts:
 
-| Action | What happens on‑chain |
-|--------|-----------------------|
-| **Deposit** | Supply an ERC‑20 token → the pool mints **aTokens** (1 aToken ≈ 1 underlying) that accrue interest. |
-| **Borrow**  | Use your deposit as collateral to borrow up to the _Loan‑to‑Value (LTV)_ ratio. |
-| **Repay**   | Pay back principal + interest to regain borrowing power. |
-| **Withdraw**| Burn aTokens to redeem the underlying collateral. |
-| **Liquidate** | If **Health Factor < 1** anyone can repay part of your debt and seize a bonus on your collateral. |
+* You **deposit** tokens (e.g. USDC, DAI) and immediately start earning interest.  
+  In return you receive **aTokens** – receipts that grow in value over time.
 
+* Those same deposits act as **collateral** that let you **borrow** other tokens
+  without selling your original holdings, similar to taking a loan against
+  your house or car.
+
+* You can **repay** whenever you like to unlock more borrowing power or
+  simply **withdraw** your collateral plus the interest you earned.
+
+* If a borrower’s safety buffer – the **Health Factor** – ever falls below 1
+  (meaning their loan is no longer fully backed), anyone on the network can
+  **liquidate** that position: they repay part of the debt and receive a small
+  bonus of the collateral.  
+  This keeps the system solvent **without** needing a central authority.
+
+| User Action | What actually happens on‑chain |
+|-------------|--------------------------------|
+| **Deposit** | Smart‑contract mints interest‑bearing **aTokens** at a 1 : 1 ratio with the supplied ERC‑20. |
+| **Borrow**  | Contract locks your aTokens as collateral and transfers up to the allowed _Loan‑to‑Value (LTV)_ amount in the underlying token. |
+| **Repay**   | Debt balance shrinks (principal + interest), restoring Health Factor. |
+| **Withdraw**| Contract burns your aTokens and releases the matching collateral. |
+| **Liquidate** | When **HF < 1** a third party repays part of the debt and receives collateral at a 5 % discount. |
+
+In short, LendiFi showcases the **core building blocks of a modern DeFi money
+market** – deposits that earn yield, over‑collateralised loans, and automated risk
+management – all wrapped in a clean React / Next.js frontend so anyone can try
+it with testnet tokens.
 
 ![LendiFi architecture diagram](docs/architecture.png)
 
@@ -23,7 +44,25 @@ LendiFi demonstrates the **core mechanics** of a money‑market protocol:
 
 ## 🏗️ High‑Level Architecture
 
+LendiFi follows a classic money‑market layout: a set of upgrade‑safe smart‑contracts on Sepolia plus a React / Next.js frontend that talks to them via wagmi + viem.
+
+![LendiFi architecture diagram](docs/advance-diagram.png)
+
+**How to read the diagram**
+
+- **User wallets** (Metamask, Rabby…) connect through **WalletConnect / Injected Provider**.  
+- Frontend calls the **LendingPool** contract for `deposit`, `borrow`, `repay`, `withdraw`, `liquidate`.
+- **aToken** is minted / burned 1‑to‑1 with the underlying collateral.
+- **PriceOracle** fetches USD prices from Chainlink feeds.
+- **InterestRateModel** returns dynamic borrow / deposit rates based on utilisation.
+- Liquidations occur automatically when a position’s **Health Factor < 1**.
+
+> **Source folders**
+> - `contracts/` – Solidity contracts (`LendingPool.sol`, `AToken.sol`, `PriceOracle.sol`, `InterestRateModel.sol`)  
+> - `frontend/`  – Next.js 14 dApp (pages, hooks, components)
+
 ---
+
 
 ## 🛠️ Core Tech Stack
 
@@ -60,7 +99,7 @@ lendifi/
 
 ---
 
-# ⚙️ Quick Start — Local Dev in 5 Steps
+# ⚙️ Quick Start
 
 > **Requirements**  
 > • Node 18 + (LTS) • Git • MetaMask (or any EVM wallet)
