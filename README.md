@@ -17,7 +17,7 @@ LendiFi demonstrates the **core mechanics** of a money‑market protocol:
 | **Liquidate** | If **Health Factor < 1** anyone can repay part of your debt and seize a bonus on your collateral. |
 
 
-![LendiFi architecture diagram](docs/diagram-lendifi.png)
+![LendiFi architecture diagram](docs/architecture.png)
 
 ---
 
