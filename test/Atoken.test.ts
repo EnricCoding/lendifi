@@ -21,16 +21,16 @@ describe("AToken", () => {
     await aToken.deployed();
   });
 
-  it("debe exponer nombre y símbolo correctos", async () => {
+  it("should expose the correct name and symbol", async () => {
     expect(await aToken.name()).to.equal(NAME);
     expect(await aToken.symbol()).to.equal(SYMBOL);
   });
 
-  it("comienza con suministro total 0", async () => {
+  it("starts with total supply 0", async () => {
     expect(await aToken.totalSupply()).to.equal(0);
   });
 
-  it("el owner puede mintear tokens", async () => {
+  it("allows the owner to mint tokens", async () => {
     await expect(aToken.connect(owner).mint(alice.address, AMOUNT))
       .to.emit(aToken, "Transfer")
       .withArgs(ethers.constants.AddressZero, alice.address, AMOUNT);
@@ -39,17 +39,17 @@ describe("AToken", () => {
     expect(await aToken.balanceOf(alice.address)).to.equal(AMOUNT);
   });
 
-  it("no-owner no puede mintear", async () => {
+  it("prevents non-owners from minting", async () => {
     await expect(
       aToken.connect(bob).mint(bob.address, AMOUNT)
     ).to.be.revertedWith("OwnableUnauthorizedAccount");
   });
 
-  it("el owner puede quemar tokens", async () => {
-    // Primero mint a alice
+  it("allows the owner to burn tokens", async () => {
+    // First mint to alice
     await aToken.connect(owner).mint(alice.address, AMOUNT);
 
-    // owner quema 400 de alice
+    // owner burns 400 from alice
     const BURN = ethers.utils.parseEther("400");
     await expect(aToken.connect(owner).burn(alice.address, BURN))
       .to.emit(aToken, "Transfer")
@@ -59,21 +59,21 @@ describe("AToken", () => {
     expect(await aToken.balanceOf(alice.address)).to.equal(AMOUNT.sub(BURN));
   });
 
-  it("no-owner no puede quemar", async () => {
-    // owner miente a alice
+  it("prevents non-owners from burning", async () => {
+    // owner mints to alice
     await aToken.connect(owner).mint(alice.address, AMOUNT);
 
-    // bob intenta quemar
+    // bob attempts to burn
     await expect(
       aToken.connect(bob).burn(alice.address, ethers.utils.parseEther("1"))
     ).to.be.revertedWith("OwnableUnauthorizedAccount");
   });
 
-  it("soporta transferencias ERC20 estándar", async () => {
-    // mint a alice
+  it("supports standard ERC20 transfers", async () => {
+    // mint to alice
     await aToken.connect(owner).mint(alice.address, AMOUNT);
 
-    // alice transfiere 200 a bob
+    // alice transfers 200 to bob
     const XFER = ethers.utils.parseEther("200");
     await expect(aToken.connect(alice).transfer(bob.address, XFER))
       .to.emit(aToken, "Transfer")
@@ -83,15 +83,15 @@ describe("AToken", () => {
     expect(await aToken.balanceOf(bob.address)).to.equal(XFER);
   });
 
-  it("soporta allowance + transferFrom", async () => {
+  it("supports allowance + transferFrom", async () => {
     await aToken.connect(owner).mint(alice.address, AMOUNT);
 
-    // alice aprueba a bob
+    // alice approves bob
     const ALLOW = ethers.utils.parseEther("300");
     await aToken.connect(alice).approve(bob.address, ALLOW);
     expect(await aToken.allowance(alice.address, bob.address)).to.equal(ALLOW);
 
-    // bob gasta 150 en nombre de alice
+    // bob spends 150 on behalf of alice
     const SPEND = ethers.utils.parseEther("150");
     await expect(
       aToken.connect(bob).transferFrom(alice.address, bob.address, SPEND)

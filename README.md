@@ -42,7 +42,6 @@ it with testnet tokens.
 
 ---
 
-
 ## 🎬 Demo
 
 Here are a couple of screenshots showing the Markets Dashboard—where you can deposit, borrow, repay, withdraw, and liquidate—and the Activity History view:
@@ -214,7 +213,7 @@ The freshly generated ABIs land in `artifacts/` and are automatically used by `s
 
 ```bash
 # contracts
-npx hardhat test
+npx hardhat test # You should see: 28 passing (5s)
 # coverage
 npx hardhat coverage
 # frontend

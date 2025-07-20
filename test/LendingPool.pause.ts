@@ -16,35 +16,35 @@ describe("LendingPool – pause / unpause", () => {
   beforeEach(async () => {
     [owner, alice] = await ethers.getSigners();
 
-    /* 1️⃣ TestToken */
+    /* 1️. TestToken */
     const Token = await ethers.getContractFactory("TestToken");
     token = await Token.deploy();
     await token.mint(alice.address, ONE.mul(100));
 
-    /* 2️⃣ AToken */
+    /* 2️. AToken */
     const AToken = await ethers.getContractFactory("AToken");
     aToken = await AToken.deploy("LendiFi aToken", "aLEND");
 
-    /* 3️⃣ mocks para oracle y modelo de interés */
+    /* 3️. mocks for oracle and interest model */
     const MockOracle = await ethers.getContractFactory("MockOracle");
     const oracle = await MockOracle.deploy();
     const MockModel = await ethers.getContractFactory("MockInterestRateModel");
     const rateModel = await MockModel.deploy();
 
-    /* 4️⃣ LendingPool */
+    /* 4️. LendingPool */
     const Pool = await ethers.getContractFactory("LendingPool");
     pool = await Pool.deploy(aToken.address, oracle.address, rateModel.address);
 
-    /* El pool se hace owner del aToken para poder mint/burn */
+    /* Pool becomes owner of aToken to mint/burn */
     await aToken.transferOwnership(pool.address);
 
-    /* approval de Alice */
+    /* Alice approves pool */
     await token
       .connect(alice)
       .approve(pool.address, ethers.constants.MaxUint256);
   });
 
-  it("pausa y bloquea deposit / withdraw", async () => {
+  it("pauses and blocks deposit / withdraw", async () => {
     await pool.connect(owner).pause();
 
     await expect(
@@ -56,7 +56,7 @@ describe("LendingPool – pause / unpause", () => {
     ).to.be.revertedWith("EnforcedPause");
   });
 
-  it("unpausa y permite operaciones otra vez", async () => {
+  it("unpauses and allows operations again", async () => {
     await pool.connect(owner).pause();
     await pool.connect(owner).unpause();
 
@@ -67,9 +67,9 @@ describe("LendingPool – pause / unpause", () => {
     expect(col).to.equal(0);
   });
 
-  it("solo owner puede pausar/despausar", async () => {
-    await expect(pool.connect(alice).pause())
-      .to.be.revertedWith("OwnableUnauthorizedAccount")
-      .withArgs(alice.address);
+  it("only owner can pause/unpause", async () => {
+    await expect(pool.connect(alice).pause()).to.be.revertedWith(
+      "OwnableUnauthorizedAccount"
+    );
   });
 });

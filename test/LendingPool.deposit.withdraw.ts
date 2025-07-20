@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
 
-describe("LendingPool – deposit & withdraw (con aToken)", () => {
+describe("LendingPool – deposit & withdraw (with aToken)", () => {
   let pool: Contract;
   let token: Contract;
   let aToken: Contract;
@@ -16,38 +16,38 @@ describe("LendingPool – deposit & withdraw (con aToken)", () => {
     const [deployer, alice] = await ethers.getSigners();
     user = alice;
 
-    /* 1️⃣ TestToken */
+    /* 1️. TestToken */
     const Token = await ethers.getContractFactory("TestToken");
     token = await Token.deploy();
     await token.mint(user.address, ONE.mul(1_000));
 
-    /* 2️⃣ AToken */
+    /* 2️. AToken */
     const AToken = await ethers.getContractFactory("AToken");
     aToken = await AToken.deploy("LendiFi aToken", "aLEND");
 
-    /* 3️⃣ mocks para oracle y modelo de interés (devuelven 1 USD y 0% APR) */
+    /* 3️. mocks for oracle and rate model (return 1 USD and 0% APR) */
     const MockOracle = await ethers.getContractFactory("MockOracle");
     const oracle = await MockOracle.deploy();
     const MockModel = await ethers.getContractFactory("MockInterestRateModel");
     const rateModel = await MockModel.deploy();
 
-    /* 4️⃣ LendingPool */
+    /* 4️. LendingPool */
     const Pool = await ethers.getContractFactory("LendingPool");
     pool = await Pool.deploy(aToken.address, oracle.address, rateModel.address);
 
-    /* El pool necesita ser owner del aToken para mintear/quemar */
+    /* Pool must own aToken to mint/burn */
     await aToken.transferOwnership(pool.address);
 
-    /* approve */
+    /* approve token spending */
     await token
       .connect(user)
       .approve(pool.address, ethers.constants.MaxUint256);
   });
 
-  it("depositar y retirar correctamente e interactuar con aToken", async () => {
+  it("should deposit and withdraw correctly and interact with aToken", async () => {
     const amt = ONE.mul(500);
 
-    /* saldo aToken inicial */
+    /* initial aToken balance */
     expect(await aToken.balanceOf(user.address)).to.equal(0);
 
     /* ─ deposit ─ */
@@ -71,13 +71,13 @@ describe("LendingPool – deposit & withdraw (con aToken)", () => {
     expect(col).to.equal(0);
   });
 
-  it("revertir si amount = 0", async () => {
+  it("reverts if amount = 0", async () => {
     await expect(
       pool.connect(user).deposit(token.address, 0)
     ).to.be.revertedWith("AmountZero");
   });
 
-  it("revertir si retira más de su colateral", async () => {
+  it("reverts if withdrawing more than collateral", async () => {
     await expect(
       pool.connect(user).withdraw(token.address, 1)
     ).to.be.revertedWith("InsufficientCollateral");

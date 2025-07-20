@@ -17,7 +17,6 @@ describe("PriceOracle", () => {
 
     oracle = await (await ethers.getContractFactory("PriceOracle")).deploy();
 
-    // despliega MockAggregator con 8 decimales
     const Feed = await ethers.getContractFactory("MockAggregator");
     feed = await Feed.deploy(8);
     await feed.setAnswer(TWO_K);
@@ -25,29 +24,29 @@ describe("PriceOracle", () => {
     await oracle.setFeed(TOKEN1, feed.address);
   });
 
-  it("devuelve precio y decimales correctos", async () => {
+  it("returns correct price and decimals", async () => {
     const [price, dec] = await oracle.getPrice(TOKEN1);
     expect(price).to.equal(TWO_K);
     expect(dec).to.equal(8);
   });
 
-  it("revierta si no hay feed", async () => {
+  it("reverts if no feed is set", async () => {
     await expect(
       oracle.getPrice(ethers.constants.AddressZero)
     ).to.be.revertedWith("FEED_NOT_SET");
   });
 
-  it("revierta con precio inválido", async () => {
+  it("reverts on invalid price", async () => {
     await feed.setAnswer(0);
     await expect(oracle.getPrice(TOKEN1)).to.be.revertedWith("INVALID_PRICE");
   });
 
-  it("revierta si está pausado", async () => {
+  it("reverts when paused", async () => {
     await oracle.pause();
     await expect(oracle.getPrice(TOKEN1)).to.be.revertedWith("EnforcedPause");
   });
 
-  it("solo owner puede registrar feed", async () => {
+  it("only owner can register a feed", async () => {
     await expect(
       oracle.connect(alice).setFeed(TOKEN1, feed.address)
     ).to.be.revertedWith("OwnableUnauthorizedAccount");

@@ -1,4 +1,3 @@
-// test/LendingPool.emergency.ts
 // SPDX-License-Identifier: MIT
 import { ethers } from "hardhat";
 import { expect } from "chai";
@@ -16,32 +15,32 @@ describe("LendingPool – emergencyWithdraw", () => {
   beforeEach(async () => {
     [owner, alice] = await ethers.getSigners();
 
-    /* 1️⃣ TestToken */
+    /* 1️. TestToken */
     const Token = await ethers.getContractFactory("TestToken");
     token = await Token.deploy();
 
-    /* 2️⃣ AToken */
+    /* 2️. AToken */
     const AToken = await ethers.getContractFactory("AToken");
     aToken = await AToken.deploy("LendiFi aToken", "aLEND");
 
-    /* 3️⃣ mocks: oracle y modelo de interés */
+    /* 3️. mocks: oracle and interest model */
     const MockOracle = await ethers.getContractFactory("MockOracle");
     const oracle = await MockOracle.deploy();
     const MockRate = await ethers.getContractFactory("MockInterestRateModel");
     const rateModel = await MockRate.deploy();
 
-    /* 4️⃣ LendingPool */
+    /* 4️. LendingPool */
     const Pool = await ethers.getContractFactory("LendingPool");
     pool = await Pool.deploy(aToken.address, oracle.address, rateModel.address);
 
-    /* El pool pasa a ser owner del aToken */
+    /* Pool becomes owner of aToken */
     await aToken.transferOwnership(pool.address);
 
-    /* Simulamos liquidez: enviamos 50 tokens al pool */
+    /* Simulate liquidity: mint 50 tokens to the pool */
     await token.mint(pool.address, FIFTY);
   });
 
-  it("permite al owner rescatar fondos cuando está pausado", async () => {
+  it("allows the owner to rescue funds when paused", async () => {
     const before = await token.balanceOf(owner.address);
 
     await pool.connect(owner).pause();
@@ -54,13 +53,13 @@ describe("LendingPool – emergencyWithdraw", () => {
     expect(after.sub(before)).to.equal(FIFTY);
   });
 
-  it("revierta si el pool NO está pausado", async () => {
+  it("reverts if the pool is NOT paused", async () => {
     await expect(
       pool.connect(owner).emergencyWithdraw(token.address)
     ).to.be.revertedWith("ExpectedPause");
   });
 
-  it("revierta si alguien que no es owner intenta rescatar", async () => {
+  it("reverts if non-owner tries to rescue funds", async () => {
     await pool.connect(owner).pause();
     await expect(
       pool.connect(alice).emergencyWithdraw(token.address)
