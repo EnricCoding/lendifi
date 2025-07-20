@@ -156,7 +156,7 @@ cp frontend/.env.example     frontend/.env.local
 
 ---
 
-## 3 Compile & Deploy to Sepolia
+## 3 Compile & Deploy to Sepolia
 
 ```bash
 # compile (re‑generates ABIs)
@@ -187,7 +187,7 @@ NEXT_PUBLIC_ORACLE_ADDRESS=0x9ed1D24E4CcCd4D65026f0DE7223907A3f227553
 
 ---
 
-## 4 Launch the Frontend
+## 4 Launch the Frontend
 
 ```bash
 cd frontend
@@ -200,7 +200,7 @@ You’re ready – Deposit → Borrow → Repay → Withdraw → Liquidate 🎉
 
 ---
 
-## Keeping ABIs in Sync
+## Keeping ABIs in Sync
 
 Whenever you change Solidity:
 
