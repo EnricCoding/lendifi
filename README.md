@@ -94,6 +94,7 @@ cp frontend/.env.example     frontend/.env.local
 | `NEXT_PUBLIC_SEPOLIA_RPC` | `frontend/.env.local` | Same RPC for the dApp |
 | `NEXT_PUBLIC_*_ADDRESS` | `frontend/.env.local` | **Leave blank** – will be filled after deploy |
 
+> **Tip:** Register in Alchemy (Web 3 Suite of APIs) <https://www.alchemy.com/>.
 > **Tip:** Get free Sepolia ETH at <https://faucet.circle.com/>.
 
 ---
